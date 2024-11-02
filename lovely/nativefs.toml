@@ -1,0 +1,9 @@
+[manifest]
+version = "1.0.0"
+priority = 0
+
+[[patches]]
+[patches.module]
+source = "nativefs.lua"
+before = "main.lua"
+name = "nativefs"

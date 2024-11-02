@@ -1,0 +1,62 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# Input key tweak
+[[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "function Controller:key_hold_update(key, dt)"
+position = "after"
+match_indent = true
+payload = """
+if self.held_key_times[key] then
+  if key ~= "escape" and self.text_input_hook and self.held_key_times[key] > 0.2 and self.held_key_times[key] >= (self.last_time[key] or 0) + 0.01 then
+    self.last_time[key] = self.held_key_times[key] + 0.01
+    local input = key
+    if string.sub(input, 1, 2) == 'kp' then input = string.sub(input, 3) end
+    if input == 'enter' then input = 'return' end
+    G.FUNCS.text_input_key {
+      e = self.text_input_hook,
+      key = input,
+      caps = self.held_keys["lshift"] or self.held_keys["rshift"],
+    }
+  else
+    self.held_key_times[key] = (self.held_key_times[key] or 0) + dt
+  end
+else
+  self.held_key_times[key] = 0
+  self.last_time[key] = 0
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "function Controller:init()"
+position = "after"
+match_indent = true
+payload = """
+self.last_time = {}
+self.reset_last_time = {}
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "self.held_key_times[key] = self.held_key_times[key] + dt"
+position = "at"
+match_indent = true
+payload = ""
+
+[[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "function Controller:key_press_update(key, dt)"
+position = "after"
+match_indent = true
+payload = """
+self.last_time[key] = nil
+self.held_key_times[key] = nil
+"""

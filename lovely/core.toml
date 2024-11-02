@@ -1,0 +1,47 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "boot_timer('prep stage', 'splash prep',1)"
+position = "after"
+match_indent = true
+payload = """
+Ezm.boot()
+"""
+
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "boot_timer('splash prep', 'end',1)"
+position = "at"
+match_indent = true
+payload = ""
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "function love.draw()"
+position = "after"
+match_indent = true
+payload = "love.graphics.clear(0, 0, 0, 1)"
+
+[[patches]]
+[patches.copy]
+target = "main.lua"
+position = "append"
+sources = [
+  "ezm/core.lua",
+  "ezm/boot_timer.lua",
+]
+
+[[patches]]
+[patches.copy]
+target = "game.lua"
+position = "append"
+sources = [
+  "ezm/game.lua",
+]

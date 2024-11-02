@@ -1,0 +1,1 @@
+local Joker = Object:extend{}

@@ -1,0 +1,135 @@
+[manifest]
+version = "1.0.0"
+dump_lua = true
+priority = 0
+
+# Show EZ Mod Loader version
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "{n=G.UIT.T, config={text = G.VERSION, scale = 0.3, colour = G.C.UI.TEXT_LIGHT}}"
+position = "at"
+match_indent = true
+payload = """
+Ezui.Row { c = { align="cr" }, n = {
+  Ezui.Row { c = { align="cr" }, n = {
+    {n=G.UIT.T, config={text = G.VERSION, scale = 0.3, colour = G.C.UI.TEXT_LIGHT}},
+  }},
+  Ezui.Row { c = { align="cr" }, n = {
+    {n=G.UIT.T, config={text = "EZMod Loader v" .. Ezm.VERSION, scale = 0.3, colour = G.C.UI.TEXT_LIGHT}},
+  }},
+}},
+"""
+
+# Add mod button to main menu for manage mods
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "G.F_QUIT_BUTTON and UIBox_button{button = quit_func, colour = G.C.RED, minw = 2.65, minh = 1.35, label = {localize('b_quit_cap')}, scale = text_scale * 1.2, col = true} or nil,"
+position = "after"
+match_indent = true
+payload = """
+{n=G.UIT.C, config={align = "cm", minw = 0.2}, nodes={}} or nil,
+UIBox_button{button = 'ezm_open_mod_menu', colour = G.C.PURPLE, minw = 2, minh = 1.35, label = {"MOD"}, scale = text_scale * 1.2, col = true},
+"""
+
+# Align profile button a little to the left
+[[patches]]
+[patches.pattern]
+target = "functions/common_events.lua"
+pattern = "G.PROFILE_BUTTON:align_to_major()"
+position = "after"
+match_indent = true
+payload = """
+G.PROFILE_BUTTON.alignment.offset.x = -1
+"""
+
+# Input GUI tweaking
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "hook_config.orig_colour = hook_config.orig_colour or copy_table(hook_config.colour)"
+position = "after"
+match_indent = true
+payload = """
+
+if G.CONTROLLER.held_keys["lctrl"] or G.CONTROLLER.held_keys["rctrl"] then
+  local text = hook_config.text
+  if args.key == 'c' then
+    for i = 1, #text.letters do
+      hook_config.text.letters[i] = ''
+    end
+    TRANSPOSE_TEXT_INPUT(0)
+    return
+  end
+end
+
+if not hook_config.accept_all and (args.key == '[' or args.key == ']') then return end
+if not hook_config.accept_all and args.key == '0' then args.key = 'o' end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "local corpus = '123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'..(hook.config.ref_table.extended_corpus and \" 0!$&()<>?:{}+-=,.[]_\" or '')"
+position = "after"
+match_indent = true
+payload = """
+if hook_config.allow_space or hook_config.accept_all then
+  corpus = corpus .. ' '
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "if hook.config.ref_table.extended_corpus then"
+position = "at"
+match_indent = true
+payload = """
+if (hook.config.ref_table.extended_corpus or hook_config.accept_all) and args.caps then
+  local cap_maps = {
+    ['1'] = '!', ['2'] = '@', ['3'] = '#', ['4'] = '$', ['5'] = '%', ['6'] = '^', ['7'] = '&', ['8'] = '*', ['9'] = '(', ['0'] = ')',
+    ['-'] = '_', ['='] = '+', ['['] = '{', [']'] = '}', [';'] = ':', ["'"] = '"', [','] = '<', ['.'] = '>', ['/'] = '?', ['\\\\'] = '|',
+  }
+  args.key = cap_maps[args.key] or args.key
+end
+
+if false then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "string.find( corpus,  args.key , 1, true) then --check to make sure the key is in the valid corpus, add it to the string"
+position = "at"
+match_indent = true
+payload = """
+(hook_config.accept_all or string.find(corpus,  args.key , 1, true)) then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "if args.key == '[' or args.key == ']' then return end"
+position = "at"
+match_indent = true
+payload = ""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "if args.key == '0' then args.key = 'o' end"
+position = "at"
+match_indent = true
+payload = ""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "love.graphics.setColor(G.C.RED)"
+position = "at"
+match_indent = true
+payload = """
+love.graphics.setColor(self.config.chosen_colour or G.C.RED)
+"""
