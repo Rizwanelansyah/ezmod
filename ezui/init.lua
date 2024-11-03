@@ -222,7 +222,7 @@ function Ezui.Button(opt, width, colour, id, fn, alt_opt)
   else
     opt = {
       id = id or string.lower(tostring(opt)):gsub("[^%d%w]+", "_"),
-      label = { tostring(opt) },
+      label = opt and { tostring(opt) },
       colour = colour,
       col = true,
       scale = 0.4,
@@ -262,6 +262,10 @@ end
 
 function Ezui.Sprite(name, width, height, offset)
   return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[name], offset) }}
+end
+
+function Ezui.Stack(nodes)
+  return { n = G.UIT.STK, nodes = nodes }
 end
 
 Ezui.Pager = require("ezui.pager")

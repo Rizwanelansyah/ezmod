@@ -133,3 +133,77 @@ match_indent = true
 payload = """
 love.graphics.setColor(self.config.chosen_colour or G.C.RED)
 """
+
+# Add a STK UIElement type for stacking element in z axis
+[[patches]]
+[patches.pattern]
+target = "globals.lua"
+pattern = "I=9, --input text box"
+position = "after"
+match_indent = true
+payload = """
+STK=10, --stack all nodes on z axis
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if self.UIT == G.UIT.R then self:juice_up() end"
+position = "after"
+match_indent = true
+payload = """
+if self.UIT == G.UIT.STK then self:juice_up() end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if self.UIT == G.UIT.R then self.config.colour = G.C.CLEAR end"
+position = "after"
+match_indent = true
+payload = """
+if self.UIT == G.UIT.STK then self.config.colour = G.C.CLEAR end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if self.UIT == G.UIT.R then self.config.outline_colour = G.C.UI.OUTLINE_LIGHT end"
+position = "after"
+match_indent = true
+payload = """
+if self.UIT == G.UIT.STK then self.config.outline_colour = G.C.UI.OUTLINE_LIGHT end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if (node.n and node.n == G.UIT.C or node.n == G.UIT.R or node.n == G.UIT.ROOT) and node.nodes then"
+position = "at"
+match_indent = true
+payload = """
+if (node.n and node.n == G.UIT.C or node.n == G.UIT.R or node.n == G.UIT.ROOT or node.n == G.UIT.STK) and node.nodes then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if v.UIT == G.UIT.R then"
+position = "at"
+match_indent = true
+payload = """
+if node.UIT == G.UIT.STK then
+  _ct.h = math.max(node.config.minh or 0, _ct.h, _th)
+  _ct.w = math.max(node.config.minw or 0,_ct.w, _tw)
+elseif v.UIT == G.UIT.R then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "{n=G.UIT.T, config={text = v, scale = args.scale, colour = args.text_colour, shadow = args.shadow, focus_args = button_pip and args.focus_args or nil, func = button_pip, ref_table = args.ref_table}}"
+position = "at"
+match_indent = true
+payload = """
+{n=G.UIT.T, config={text = v, scale = args.scale, colour = args.text_colour, shadow = args.shadow, focus_args = button_pip and args.focus_args or nil, func = button_pip, ref_table = args.ref_table, ref_value = args.text_field}}
+"""

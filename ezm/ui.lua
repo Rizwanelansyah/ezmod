@@ -1,29 +1,98 @@
 local UI = {}
 
 function UI.mod_box(mod)
+  local control_buttons = {}
+  local _control_buttons = {
+    { "Disable", "disable", G.C.RED },
+    { "Switch", "switch", G.C.ORANGE },
+    { "Settings", "settings", G.C.BLUE },
+  }
+
+  for i, btn in ipairs(_control_buttons) do
+    control_buttons[i] = Ezui.Row({
+      c = { padding = 0.1 },
+      n = { Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2], nil, { scale = 0.3 }) },
+    })
+    control_buttons[i].nodes[1].nodes[1].config.shadow = false
+  end
+
   return Ezui.Row({
     c = { align = "cl", padding = 0.1, r = 0.1, emboss = 0.1, colour = G.C.WHITE },
     n = {
-      Ezui.Col({ c = { padding = 0.2 }, n = { mod:icon_ui(1.5, 1.5) } }),
-      Ezui.Col({
-        c = { padding = 0.1 },
+      Ezui.Row({
         n = {
-          Ezui.Row({
-            c = { align = "tl" },
+          Ezui.Col({ c = { padding = 0.2, align = "cm" }, n = { mod:icon_ui(1.5, 1.5) } }),
+          Ezui.Col({
+            c = { padding = 0.1 },
             n = {
               Ezui.Row({
-                n = { Ezui.DynText({ string = mod.name, colour = G.C.GREY, scale = 0.4, float = true, shadow = true }) },
+                c = { align = "tl" },
+                n = {
+                  Ezui.Row({
+                    n = {
+                      Ezui.Stack({
+                        Ezui.Box({ h = 0.01, w = 8 }),
+                        Ezui.DynText({
+                          string = mod.name,
+                          colour = G.C.GREY,
+                          scale = 0.4,
+                          float = true,
+                          shadow = true,
+                        }),
+                        mod.loaded
+                          and Ezui.Row({
+                            c = { align = "br" },
+                            n = {
+                              Ezui.Text({
+                                text = "Loaded",
+                                colour = G.C.BLUE,
+                                scale = 0.3,
+                              }),
+                              Ezui.Space(0.2),
+                              Ezui.Text({
+                                text = "v" .. table.concat(mod.version, "."),
+                                colour = G.C.GREEN,
+                                scale = 0.3,
+                              }),
+                            },
+                          }),
+                      }),
+                    },
+                  }),
+                  Ezui.Row({ n = { Ezui.Space(0, 0.05) } }),
+                  Ezui.Row({ n = { Ezui.Box({ h = 0.03, w = 8, colour = G.C.GREY }) } }),
+                  Ezui.Row({ n = { Ezui.Space(0, 0.1) } }),
+                  Ezui.FmText(mod.desc, {
+                    t = { colour = G.C.GREY, scale = 0.3 },
+                    c = { align = "cl", line_space = 0.05 },
+                    v = { self = mod },
+                  }),
+                },
               }),
-              Ezui.Row({ n = { Ezui.Space(0, 0.2) } }),
-              Ezui.Row({ n = { Ezui.Box({ h = 0.03, w = 8, colour = G.C.GREY }) } }),
-              Ezui.Row({ n = { Ezui.Space(0, 0.2) } }),
-              Ezui.FmText(
-                mod.desc,
-                { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cl", line_space = 0.05 }, v = { self = mod } }
-              ),
             },
           }),
+          Ezui.Col({ n = { Ezui.Space(0.1) } }),
+          Ezui.Col({
+            c = { align = "cl" },
+            n = control_buttons,
+          }),
         },
+      }),
+
+      Ezui.Row({
+        n = (function()
+          local tags = {}
+          for i, tag in ipairs(mod.tags or {}) do
+            if i ~= 1 then
+              tags[#tags + 1] = Ezui.Col({ n = { Ezui.Space(0.1) } })
+            end
+            tags[#tags + 1] = Ezui.Col({
+              c = { padding = 0.1, r = 0.1, emboss = 0.05, colour = G.C.GREEN },
+              n = { Ezui.Text({ scale = 0.3, colour = G.C.WHITE, text = tag }) },
+            })
+          end
+          return tags
+        end)(),
       }),
     },
   })
@@ -109,7 +178,7 @@ function UI.mod_menu()
           c = { align = "cm", r = 0.25, padding = 0.3, colour = G.C.L_BLACK },
           n = {
             Ezui.Col({
-              c = { minh = 10, align = "tm" },
+              c = { minh = 11.5, align = "tm" },
               n = {
                 UI.mod_menu_tabs(),
                 Ezui.Col({ n = { Ezui.Space(0.1, 0.5) } }),
@@ -129,7 +198,7 @@ function UI.mod_menu_tabs()
     { "Browser", "browser" },
     { "Settings", "settings" },
   }
-  local tabw = 15
+  local tabw = 17
   local btn_width = tabw / #buttons
 
   local nodes = {}
@@ -153,7 +222,7 @@ function UI.mod_menu_browser()
         c = { align = "tm", padding = 0.1 },
         n = {
           Ezui.Col({
-            c = { align = "cm", minw = 15, id = "ez_mod_menu_browser_bar" },
+            c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
               Ezui.Button("<", 0.5, G.C.RED, "ez_mod_menu_browser_back"),
               Ezui.Space(0.1),
@@ -184,12 +253,12 @@ function UI.mod_menu_mods()
         c = { align = "tm", padding = 0.1 },
         n = {
           Ezui.Col({
-            c = { align = "cm", minw = 15, id = "ez_mod_menu_browser_bar" },
+            c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
               Ezui.Row({ n = {
                 UI.mod_menu_mods_tabs(),
               } }),
-              Ezui.Pager(MODS, 3):ui(15, 8, UI.mod_box),
+              Ezui.Pager(MODS, 3):ui(17, 9.3, UI.mod_box),
             },
           }),
         },
@@ -203,7 +272,7 @@ function UI.mod_menu_mods_tabs()
     { "Loaded", "loaded" },
     { "All", "all" },
   }
-  local tabw = 15
+  local tabw = 17
   local btn_width = tabw / #buttons
 
   local nodes = {}

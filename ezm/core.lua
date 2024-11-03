@@ -39,6 +39,7 @@ function Ezm.list_mods(mods_path, fn)
         tags = type(spec.tags) == "string" and { spec.tags } or (spec.tags or {}),
         icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
         path = path,
+        installed = true,
       }
 
       local mod = Mod(spec)
@@ -84,4 +85,5 @@ function Ezm.boot()
   Ezm.boot_time = false
 end
 
-require("ezm.button_callbacks")
+require("ezm.funcs")
+require("ezui.funcs")

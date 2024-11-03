@@ -1,20 +1,25 @@
 local Mod = Object:extend()
 
-function Mod:init(spec)
-  self.id = spec.id
-  self.name = spec.name
-  self.prefix = spec.prefix
-  self.tags = spec.tags
-  self.path = spec.path
-  self.deps = {}
-  self.desc = {}
-  self.icon = spec.icon
+function Mod:init(opt)
+  self.id = opt.id
+  self.name = opt.name
+  self.prefix = opt.prefix
+  self.tags = opt.tags
+  self.path = opt.path
+  self.icon = opt.icon
+  self.installed = opt.installed
   self.loaded = false
-  for line in spec.desc:gmatch("([^\n]*)\n?") do
-    self.desc[#self.desc + 1] = line
+  self.version = opt.version
+
+  self.desc = {}
+  if opt.desc then
+    for line in opt.desc:gmatch("([^\n]*)\n?") do
+      self.desc[#self.desc + 1] = line
+    end
   end
 
-  for _, dep in ipairs(spec.deps) do
+  self.deps = {}
+  for _, dep in ipairs(opt.deps) do
     self.deps[dep.id] = {
       version = Ezutil.parse_version_spec(dep.version),
       ok = false,
@@ -47,7 +52,7 @@ function Mod:icon_ui(w, h)
   if self.icon then
     if self.icon[1] == "animated" then
       local path = self.icon[2]
-      local size = type(self.icon[3]) == "number" and {self.icon[3], self.icon[3]} or self.icon[3]
+      local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
       local frames = self.icon[4]
       local key = "ezmod_" .. self.id .. "_animated_icon:" .. path
       local s = G.ANIMATION_ATLAS[key]
@@ -87,7 +92,18 @@ function Mod:icon_ui(w, h)
         s = data
       end
       return { n = G.UIT.O, config = { object = Sprite(0, 0, w or 1, h or 1, s) } }
-    else
+    elseif self.icon[1] == "balatro:sprite" then
+      local offset = self.icon[3] and { x = self.icon[3][1], y = self.icon[3][2] }
+      return {
+        n = G.UIT.O,
+        config = { object = Sprite(0, 0, w or 1, h or 1, G.ASSET_ATLAS[self.icon[2]], offset) },
+      }
+    elseif self.icon[1] == "balatro:animation" then
+      local offset = self.icon[3] and { x = self.icon[3][1], y = self.icon[3][2] }
+      return {
+        n = G.UIT.O,
+        config = { object = AnimatedSprite(0, 0, w or 1, h or 1, G.ANIMATION_ATLAS[self.icon[2]], offset) },
+      }
     end
   else
     -- Use rare joker tag sprite if didn't have an icon
