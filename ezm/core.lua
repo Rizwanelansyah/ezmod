@@ -1,10 +1,10 @@
--- EZDBG(require("https").request("https://raw.githubusercontent.com/SirMaiquis/Balatro-Stickers-Always-Shown/refs/heads/main/manifest.json"))
 local lovely = require("lovely")
 NFS = require("nativefs")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
 MODS = {}
+_MODS = {}
 ERROR_MODS = {}
-local ezm_path = MODS_PATH .. "/Ezm"
+local ezm_path = MODS_PATH .. "/ezmod"
 
 package.path = package.path .. (ezm_path .. "/?.lua;") .. (ezm_path .. "/?/init.lua;")
 
@@ -55,20 +55,23 @@ function Ezm.boot()
   Ezm.boot_progress = 0
   boot_timer(nil, "Init", Ezm.boot_progress, "EZ Mod Loader")
 
+  local mod_total = 0
   Ezm.list_mods(MODS_PATH, function(mod)
     if not MODS[mod.id] then
       MODS[mod.id] = mod
+      _MODS[#_MODS + 1] = mod
+      mod_total = mod_total + 1
     else
       ERROR_MODS[#ERROR_MODS + 1] = { type = "duplicate", mod = mod }
     end
   end)
 
   boot_timer(nil, "Checking Dependencies", Ezm.boot_progress)
-  local mod_total = 0
   for _, mod in pairs(MODS) do
-    boot_timer(nil, "Checking Dependencies :: ", Ezm.boot_progress)
-    mod_total = mod_total + 1
-    mod_total = mod_total + mod:resolve()
+    if next(mod.deps or {}) then
+      boot_timer(nil, "Checking Dependencies :: " .. mod.name, Ezm.boot_progress)
+      mod_total = mod_total + mod:resolve()
+    end
   end
   Ezm.boot_progress = 0.1
 

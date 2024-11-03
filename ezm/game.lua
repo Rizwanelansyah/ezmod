@@ -1,6 +1,6 @@
-local g_main_menu = Game.main_menu
-function Game:main_menu()
-  g_main_menu(self)
+local g_update = Game.update
+function Game:update(...)
+  g_update(self, ...)
   if not ERROR_MODS_CHECKED and #ERROR_MODS > 0 then
     G.E_MANAGER:add_event(Event({
       func = function()
@@ -26,6 +26,7 @@ function Game:set_ezm_globals()
     TAB_SELECTED = copy_table(self.C.BLUE),
     MODS_TAB = copy_table(self.C.GREY),
   }
+  self.EZUI_CTX_MENU = nil
   self.EZ_MOD_MENU = {
     current_tab = "mods",
     search = "",

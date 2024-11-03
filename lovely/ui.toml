@@ -207,3 +207,51 @@ match_indent = true
 payload = """
 {n=G.UIT.T, config={text = v, scale = args.scale, colour = args.text_colour, shadow = args.shadow, focus_args = button_pip and args.focus_args or nil, func = button_pip, ref_table = args.ref_table, ref_value = args.text_field}}
 """
+
+[[patches]]
+[patches.pattern]
+target = "game.lua"
+pattern = "if self.debug_tools then"
+position = "before"
+match_indent = true
+payload = """
+if self.EZUI_CTX_MENU then
+  love.graphics.push()
+  self.EZUI_CTX_MENU:translate_container()
+  self.EZUI_CTX_MENU:draw()
+  love.graphics.pop()
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "G.FUNCS.exit_overlay_menu = function()"
+position = "after"
+match_indent = true
+payload = """
+if G.EZUI_CTX_MENU then
+  G.EZUI_CTX_MENU:remove()
+  G.EZUI_CTX_MENU = nil
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if (self.config.button_UIE and button_active) or (not self.config.button_UIE and self.config.shadow and G.SETTINGS.GRAPHICS.shadows == 'On') then"
+position = "at"
+match_indent = true
+payload = """
+if (not self.config.force_no_shadow) and (self.config.button_UIE and button_active) or (not self.config.button_UIE and self.config.shadow and G.SETTINGS.GRAPHICS.shadows == 'On') then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "self.ARGS.button_colours[2] = (((collided_button.config.hover and collided_button.states.hover.is) or (collided_button.last_clicked and collided_button.last_clicked > G.TIMERS.REAL - 0.1)) and G.C.UI.HOVER or nil)"
+position = "at"
+match_indent = true
+payload = """
+self.ARGS.button_colours[2] = (((collided_button.config.hover and collided_button.states.hover.is) or (collided_button.last_clicked and collided_button.last_clicked > G.TIMERS.REAL - 0.1)) and (self.config.hover_colour or G.C.UI.HOVER) or nil)
+"""

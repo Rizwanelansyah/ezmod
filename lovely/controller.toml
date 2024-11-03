@@ -60,3 +60,11 @@ payload = """
 self.last_time[key] = nil
 self.held_key_times[key] = nil
 """
+
+[[patches]]
+[patches.copy]
+target = "engine/controller.lua"
+position = "append"
+sources = [
+  "ezm/controller.lua",
+]

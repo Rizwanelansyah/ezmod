@@ -247,7 +247,7 @@ function Ezui.Image(path, width, height)
   local key = "ezui_image:" .. path
   local s = G.ASSET_ATLAS[key]
   if not s then
-    local img = love.graphics.newImage(path, { mipmaps = true, dpiscale = 1 })
+    local img = love.graphics.newImage(Ezutil.new_file_data(path), { mipmaps = true, dpiscale = 1 })
     local data = {
       name = path,
       image = img,
@@ -261,6 +261,9 @@ function Ezui.Image(path, width, height)
 end
 
 function Ezui.Sprite(name, width, height, offset)
+  if type(name) == "table" then
+    return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, name, offset) }}
+  end
   return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[name], offset) }}
 end
 
@@ -269,5 +272,6 @@ function Ezui.Stack(nodes)
 end
 
 Ezui.Pager = require("ezui.pager")
+Ezui.CtxMenu = require("ezui.ctx_menu")
 
 return Ezui

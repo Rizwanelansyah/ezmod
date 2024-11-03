@@ -4,16 +4,45 @@ function UI.mod_box(mod)
   local control_buttons = {}
   local _control_buttons = {
     { "Disable", "disable", G.C.RED },
-    { "Switch", "switch", G.C.ORANGE },
     { "Settings", "settings", G.C.BLUE },
+    {
+      "...",
+      "other",
+      G.C.L_BLACK,
+      function()
+        Ezui.CtxMenu({
+          {
+            text = "Switch version",
+            colour = G.C.ORANGE,
+            icon = { atlas = G.ASSET_ATLAS["tags"] },
+          },
+          {
+            text = "Detail",
+            colour = G.C.BLUE,
+            icon = { atlas = G.ASSET_ATLAS["tags"], offset = { x = 1, y = 0 } },
+          },
+          {
+            text = "Remove",
+            colour = G.C.RED,
+            icon = { atlas = G.ASSET_ATLAS["tags"], offset = { x = 2, y = 0 } },
+          },
+        }, G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_control_other_area"))
+      end,
+    },
   }
 
   for i, btn in ipairs(_control_buttons) do
+    local button = Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2] .. "_button", btn[4], { scale = 0.3 })
+    button.nodes[1].config.shadow = false
     control_buttons[i] = Ezui.Row({
       c = { padding = 0.1 },
-      n = { Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2], nil, { scale = 0.3 }) },
+      n = {
+        Ezui.Stack({
+          Ezui.Box({ id = "ez_mod_control_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
+          button,
+        }),
+      },
     })
-    control_buttons[i].nodes[1].nodes[1].config.shadow = false
   end
 
   return Ezui.Row({
@@ -258,7 +287,7 @@ function UI.mod_menu_mods()
               Ezui.Row({ n = {
                 UI.mod_menu_mods_tabs(),
               } }),
-              Ezui.Pager(MODS, 3):ui(17, 9.3, UI.mod_box),
+              Ezui.Pager(_MODS, 3):ui(17, 9.3, UI.mod_box),
             },
           }),
         },
