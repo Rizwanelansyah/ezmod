@@ -1,8 +1,11 @@
 local lovely = require("lovely")
 NFS = require("nativefs")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
+EZM_DATA_PATH = lovely.mod_dir:gsub("/[^/]*/?$", "") .. "/ezmod"
+DOWNLOAD_MODS_PATH = EZM_DATA_PATH .. "/mods"
 MODS = {}
 _MODS = {}
+ALL_MODS = nil
 ERROR_MODS = {}
 local ezm_path = MODS_PATH .. "/ezmod"
 
@@ -11,18 +14,36 @@ package.path = package.path .. (ezm_path .. "/?.lua;") .. (ezm_path .. "/?/init.
 local util = require("ezm.util")
 local Mod = require("ezm.mod")
 
-Ezm = {}
-Ezm.VERSION = "0.0.1"
+Ezmod = {}
+Ezmod.VERSION = "0.0.1"
 Ezui = require("ezui")
 Ezutil = util
 
-function Ezm.list_mods(mods_path, fn)
+function Ezmod.list_downloaded_mods()
+  if ALL_MODS then
+    return
+  else
+    ALL_MODS = {}
+  end
+  Ezmod.list_mods(DOWNLOAD_MODS_PATH, function (mod)
+    ALL_MODS[#ALL_MODS+1] = mod
+  end)
+  return ALL_MODS
+end
+
+function Ezmod.list_mods(mods_path, fn, deep_load)
   local mods = NFS.getDirectoryItems(mods_path)
   for _, mod_name in ipairs(mods) do
     local path = mods_path .. "/" .. mod_name
     local ezm_spec_code = NFS.read(path .. "/ezmod.lua")
     if ezm_spec_code then
-      local spec = {}
+      local spec = {
+        VFMT = function (fmt)
+          return function (self)
+            return string.format(fmt, table.concat(self.version, "."))
+          end
+        end,
+      }
       setmetatable(spec, { __index = _G })
       load(ezm_spec_code, string.format("%s Spec", mod_name), "bt", spec)()
       local name = spec.name or mod_name
@@ -39,24 +60,30 @@ function Ezm.list_mods(mods_path, fn)
         tags = type(spec.tags) == "string" and { spec.tags } or (spec.tags or {}),
         icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
         path = path,
+        author = type(spec.author) == "string" and { spec.author } or spec.author or {},
+        git_tag = spec.git_tag,
+        need_relog = spec.need_relog,
         installed = true,
       }
 
       local mod = Mod(spec)
       fn(mod)
-    else
-      Ezm.list_mods(path, fn)
+    elseif deep_load then
+      Ezmod.list_mods(path, fn)
     end
   end
 end
 
-function Ezm.boot()
-  Ezm.boot_time = true
-  Ezm.boot_progress = 0
-  boot_timer(nil, "Init", Ezm.boot_progress, "EZ Mod Loader")
+function Ezmod.boot()
+  if not NFS.getInfo(DOWNLOAD_MODS_PATH, "directory") then
+    NFS.createDirectory(DOWNLOAD_MODS_PATH)
+  end
+  Ezmod.boot_time = true
+  Ezmod.boot_progress = 0
+  boot_timer(nil, "Init", Ezmod.boot_progress, "EZ Mod Loader")
 
   local mod_total = 0
-  Ezm.list_mods(MODS_PATH, function(mod)
+  Ezmod.list_mods(MODS_PATH, function(mod)
     if not MODS[mod.id] then
       MODS[mod.id] = mod
       _MODS[#_MODS + 1] = mod
@@ -64,28 +91,32 @@ function Ezm.boot()
     else
       ERROR_MODS[#ERROR_MODS + 1] = { type = "duplicate", mod = mod }
     end
-  end)
+  end, true)
 
-  boot_timer(nil, "Checking Dependencies", Ezm.boot_progress)
+  boot_timer(nil, "Checking Dependencies", Ezmod.boot_progress)
   for _, mod in pairs(MODS) do
     if next(mod.deps or {}) then
-      boot_timer(nil, "Checking Dependencies :: " .. mod.name, Ezm.boot_progress)
-      mod_total = mod_total + mod:resolve()
+      boot_timer(nil, "Checking Dependencies :: " .. mod.name, Ezmod.boot_progress)
+      local succes, new_mods = mod:resolve()
+      if not succes then
+        ERROR_MODS[#ERROR_MODS+1] = { type = "missing_deps", mod = mod }
+      end
+      mod_total = mod_total + new_mods
     end
   end
-  Ezm.boot_progress = 0.1
+  Ezmod.boot_progress = 0.1
 
-  boot_timer(nil, "Loading", Ezm.boot_progress)
+  boot_timer(nil, "Loading", Ezmod.boot_progress)
   local mod_progress_add = (1 / mod_total) * 0.9
   for _, mod in pairs(MODS) do
-    boot_timer(nil, "Loading :: " .. mod.name, Ezm.boot_progress)
+    boot_timer(nil, "Loading :: " .. mod.name, Ezmod.boot_progress)
     mod:load()
-    Ezm.boot_progress = Ezm.boot_progress + mod_progress_add
+    Ezmod.boot_progress = Ezmod.boot_progress + mod_progress_add
   end
 
-  Ezm.boot_progress = 1
-  boot_timer(nil, "Finish", Ezm.boot_progress)
-  Ezm.boot_time = false
+  Ezmod.boot_progress = 1
+  boot_timer(nil, "Finish", Ezmod.boot_progress)
+  Ezmod.boot_time = false
 end
 
 require("ezm.funcs")

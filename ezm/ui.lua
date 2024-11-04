@@ -3,8 +3,9 @@ local UI = {}
 function UI.mod_box(mod)
   local control_buttons = {}
   local _control_buttons = {
-    { "Disable", "disable", G.C.RED },
-    { "Settings", "settings", G.C.BLUE },
+    mod.loaded and { "Disable", "disable", G.C.RED } or { "Enable", "enable", G.C.GREEN },
+    mod.installed and { "Delete", "delete", darken(G.C.RED, 0.2) }
+      or { "Download", "download", darken(G.C.GREEN, 0.1) },
     {
       "...",
       "other",
@@ -12,18 +13,18 @@ function UI.mod_box(mod)
       function()
         Ezui.CtxMenu({
           {
-            text = "Switch version",
-            colour = G.C.ORANGE,
+            text = "Setting",
+            colour = G.C.BLUE,
             icon = { atlas = G.ASSET_ATLAS["tags"] },
           },
           {
             text = "Detail",
-            colour = G.C.BLUE,
+            colour = G.C.PURPLE,
             icon = { atlas = G.ASSET_ATLAS["tags"], offset = { x = 1, y = 0 } },
           },
           {
-            text = "Remove",
-            colour = G.C.RED,
+            text = "Switch version",
+            colour = G.C.ORANGE,
             icon = { atlas = G.ASSET_ATLAS["tags"], offset = { x = 2, y = 0 } },
           },
         }, G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_control_other_area"))
@@ -32,7 +33,8 @@ function UI.mod_box(mod)
   }
 
   for i, btn in ipairs(_control_buttons) do
-    local button = Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2] .. "_button", btn[4], { scale = 0.3 })
+    local button =
+      Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2] .. "_button", btn[4], { scale = 0.3, ref_table = mod })
     button.nodes[1].config.shadow = false
     control_buttons[i] = Ezui.Row({
       c = { padding = 0.1 },
@@ -58,15 +60,32 @@ function UI.mod_box(mod)
                 c = { align = "tl" },
                 n = {
                   Ezui.Row({
+                    c = { align = "bl" },
                     n = {
                       Ezui.Stack({
                         Ezui.Box({ h = 0.01, w = 8 }),
-                        Ezui.DynText({
-                          string = mod.name,
-                          colour = G.C.GREY,
-                          scale = 0.4,
-                          float = true,
-                          shadow = true,
+                        Ezui.Row({
+                          c = { align = "bl" },
+                          n = {
+                            Ezui.DynText({
+                              string = mod.name,
+                              colour = G.C.GREY,
+                              scale = 0.4,
+                              float = true,
+                              shadow = true,
+                            }),
+                            #mod.author == 1 and Ezui.Space(0.2),
+                            #mod.author == 1 and Ezui.Col({
+                              c = { align = "lb" },
+                              n = {
+                                Ezui.Text({
+                                  text = mod.author[1],
+                                  colour = G.C.UI.TEXT_INACTIVE,
+                                  scale = 0.3,
+                                }),
+                              },
+                            }),
+                          },
                         }),
                         mod.loaded
                           and Ezui.Row({
@@ -128,10 +147,10 @@ function UI.mod_box(mod)
 end
 
 function UI.error_description(type, mod)
+  local function row(node, config)
+    return Ezui.Row({ c = config or { align = "cm" }, n = { node } })
+  end
   if type == "duplicate" then
-    local function row(node, config)
-      return Ezui.Row({ c = config or { align = "cm" }, n = { node } })
-    end
     return Ezui.Row({
       c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08 },
       n = {
@@ -141,6 +160,31 @@ function UI.error_description(type, mod)
           "[G.C.ORANGE]{mod.name} and [G.C.ORANGE]{MODS[mod.id].name}",
           "have a same [G.C.WHITE:G.C.RED]{'ID'} which is [G.C.BLUE]{mod.id}.",
         }, { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } }),
+      },
+    })
+  elseif type == "missing_deps" then
+    local text = {
+      "Missing dependencies for [G.C.ORANGE]{mod.name}.",
+    }
+    for mod_id, spec in pairs(mod.deps) do
+      if not spec.ok then
+        text[#text + 1] = string.format("[:G.C.RED]{'ERROR'} Mod [G.C.ORANGE]{'%s'} not found", mod_id)
+      else
+        text[#text + 1] = string.format("[:G.C.GREEN]{'OK'} Mod [G.C.ORANGE]{'%s'} loaded", mod_id)
+      end
+    end
+    return Ezui.Row({
+      c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08 },
+      n = {
+        row(
+          Ezui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }),
+          { padding = 0.1, align = "sm" }
+        ),
+        row(Ezui.Box({ h = 0.03, w = 5, colour = G.C.GREY })),
+        Ezui.FmText(
+          text,
+          { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } }
+        ),
       },
     })
   end

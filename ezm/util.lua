@@ -24,9 +24,9 @@ function util.parse_version_spec(version)
     local from = util.parse_version(string.match(version, version_pattern .. "%s*%-"))
     local to = util.parse_version(string.match(version, "%-%s*" .. version_pattern))
     return { from = from, to = to }
-  elseif string.match(version, "+$") then
+  elseif string.match(version, "+%s*$") then
     return { upper = util.parse_version(string.match(version, version_pattern)) }
-  elseif string.match(version, "-$") then
+  elseif string.match(version, "-%s*$") then
     return { lower = util.parse_version(string.match(version, version_pattern)) }
   else
     return { exact = util.parse_version(version) }
@@ -75,14 +75,17 @@ function util.trim(s)
   return string.match(s, "^%s*(.*)%s*$")
 end
 
-function util.new_file_data(filepath)
+function util.read_file(filepath)
   local f, err = io.open(filepath, "rb")
   if not err then
-    local result = love.filesystem.newFileData(f:read("*a"), "")
+    local result = f:read("*a")
     f:close()
     return result
   end
-  return love.filesystem.newFileData("", "")
+end
+
+function util.new_file_data(filepath)
+  return love.filesystem.newFileData(util.read_file(filepath) or "", "")
 end
 
 function EZDBG(...)

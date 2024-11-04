@@ -10,6 +10,9 @@ function Mod:init(opt)
   self.installed = opt.installed
   self.loaded = false
   self.version = opt.version
+  self.git_tag = opt.git_tag
+  self.author = opt.author
+  self.need_relog = opt.need_relog
 
   self.desc = {}
   if opt.desc then
@@ -20,29 +23,102 @@ function Mod:init(opt)
 
   self.deps = {}
   for _, dep in ipairs(opt.deps) do
-    self.deps[dep.id] = {
-      version = Ezutil.parse_version_spec(dep.version),
-      ok = false,
-    }
+    if type(dep) == "string" then
+      self.deps[dep] = { ok = false }
+    else
+      self.deps[dep.id] = {
+        version = dep.version and Ezutil.parse_version_spec(dep.version),
+        ok = false,
+      }
+    end
   end
 end
 
 function Mod:resolve()
-  --TODO: resolove depencdencies and return total of downloaded depencdencies
-  return 0
+  local succes = true
+  local new_mods = 0
+  for dep_id, spec in pairs(self.deps) do
+    if not spec.ok then
+      local dep_mod = MODS[dep_id]
+      local dep_mods = {}
+      if not dep_mod then
+        local mods = Ezmod.list_downloaded_mods()
+        succes = false
+        for _, mod in pairs(mods or {}) do
+          if mod.id == dep_id then
+            succes = true
+          end
+        end
+      else
+        dep_mods = { dep_mod }
+      end
+      local valid_mod
+      for _, mod in pairs(dep_mods) do
+        if spec.version then
+          if spec.version.upper then
+            if Ezutil.version_greater_equal(mod.version, spec.version.upper) then
+              valid_mod = mod
+              break
+            end
+          elseif spec.version.lower then
+            if Ezutil.version_less_equal(mod.version, spec.version.upper) then
+              valid_mod = mod
+              break
+            end
+          elseif spec.version.exact then
+            if Ezutil.version_equal(mod.version, spec.version.upper) then
+              valid_mod = mod
+              break
+            end
+          elseif spec.version.from and spec.version.to then
+            if
+              Ezutil.version_greater_equal(mod.version, spec.version.from)
+              and Ezutil.version_less_equal(mod.version, spec.version.to)
+            then
+              valid_mod = mod
+              break
+            end
+          end
+        else
+          valid_mod = mod
+          break
+        end
+      end
+      if not valid_mod then
+        succes = false
+      else
+        local dep_success, dep_new_mods = valid_mod:resolve()
+        if not dep_success then
+          succes = false
+        end
+        spec.ok = true
+        new_mods = new_mods + dep_new_mods
+      end
+    end
+  end
+  return succes, new_mods
 end
 
 function Mod:load()
   if self.loaded then
     return
   end
+  if not Ezmod.boot_time then
+    self:resolve()
+  end
+  if not Ezmod.boot_time and self.need_relog then
+    --TODO: relog balatro
+  end
   self.loaded = true
-  --TODO: run then entry point of mod
+  --TODO: run mod files
 end
 
 function Mod:unload()
   if not self.loaded then
     return
+  end
+  if self.need_relog then
+    --TODO: relog baltro
   end
   self.loaded = false
   --TODO: unload mod (only work for EZ API only)

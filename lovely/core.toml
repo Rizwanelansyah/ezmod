@@ -10,7 +10,7 @@ pattern = "boot_timer('prep stage', 'splash prep',1)"
 position = "after"
 match_indent = true
 payload = """
-Ezm.boot()
+Ezmod.boot()
 """
 
 [[patches]]
