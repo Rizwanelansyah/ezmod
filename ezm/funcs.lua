@@ -59,6 +59,7 @@ function G.FUNCS.mod_menu_mods_switch_tab(name)
       return mod.loaded
     end)
   elseif name == "all" then
+    Ezmod.list_downloaded_mods()
     G.EZ_MOD_MENU.mod_pager:set_filter()
   end
 end

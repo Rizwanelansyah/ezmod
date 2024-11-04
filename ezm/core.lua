@@ -1,21 +1,21 @@
 local lovely = require("lovely")
 NFS = require("nativefs")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
-EZM_DATA_PATH = lovely.mod_dir:gsub("/[^/]*/?$", "") .. "/ezmod"
-DOWNLOAD_MODS_PATH = EZM_DATA_PATH .. "/mods"
 MODS = {}
-_MODS = {}
 ALL_MODS = {}
 ERROR_MODS = {}
-local ezm_path = MODS_PATH .. "/ezmod"
+Ezmod = {}
+Ezmod.VERSION = "0.0.1"
+Ezmod.path = MODS_PATH .. "/ezmod"
+Ezmod.data_path = lovely.mod_dir:gsub("/[^/]*/?$", "") .. "/ezmod"
+Ezmod.download_path = Ezmod.data_path .. "/mods"
+Ezmod.modlist = { ezmod = true }
 
-package.path = package.path .. (ezm_path .. "/?.lua;") .. (ezm_path .. "/?/init.lua;")
+package.path = package.path .. (Ezmod.path .. "/?.lua;") .. (Ezmod.path .. "/?/init.lua;")
 
 local util = require("ezm.util")
 local Mod = require("ezm.mod")
 
-Ezmod = {}
-Ezmod.VERSION = "0.0.1"
 Ezui = require("ezui")
 Ezutil = util
 
@@ -25,19 +25,23 @@ function Ezmod.list_downloaded_mods()
     return
   else
     local_mods_listed = true
-    for _, mod in pairs(_MODS) do
-      ALL_MODS[#ALL_MODS + 1] = mod
+    for _, mod_id in ipairs(NFS.getDirectoryItems(Ezmod.download_path)) do
+      Ezmod.list_mods(Ezmod.download_path .. "/" .. mod_id, function(mod)
+        ALL_MODS[#ALL_MODS + 1] = mod
+      end, false, true)
     end
   end
-  Ezmod.list_mods(DOWNLOAD_MODS_PATH, function(mod)
-    ALL_MODS[#ALL_MODS + 1] = mod
-  end)
   return ALL_MODS
 end
 
-function Ezmod.list_mods(mods_path, fn, deep_load)
+function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
   local mods = NFS.getDirectoryItems(mods_path)
-  for _, mod_name in ipairs(mods) do
+  local from, to, inc = 1, #mods, 1
+  if reverse then
+    from, to, inc = #mods, 1, -1
+  end
+  for i = from, to, inc do
+    local mod_name = mods[i]
     local path = mods_path .. "/" .. mod_name
     local ezm_spec_code = NFS.read(path .. "/ezmod.lua")
     if ezm_spec_code then
@@ -51,7 +55,7 @@ function Ezmod.list_mods(mods_path, fn, deep_load)
       setmetatable(spec, { __index = _G })
       load(ezm_spec_code, string.format("%s Spec", mod_name), "bt", spec)()
       local name = spec.name or mod_name
-      local id = spec.id or string.lower(s):gsub("[^%d%w]+", "_")
+      local id = spec.id or string.lower(s):gsub("[^%w]+", "_")
       local prefix = spec.prefix or id
       local version = util.parse_version(spec.version or { 0, 0, 1 })
       local spec = {
@@ -73,25 +77,33 @@ function Ezmod.list_mods(mods_path, fn, deep_load)
       local mod = Mod(spec)
       fn(mod)
     elseif deep_load then
-      Ezmod.list_mods(path, fn)
+      Ezmod.list_mods(path, fn, deep_load, reverse)
     end
   end
 end
 
 function Ezmod.boot()
-  if not NFS.getInfo(DOWNLOAD_MODS_PATH, "directory") then
-    NFS.createDirectory(DOWNLOAD_MODS_PATH)
-  end
   Ezmod.boot_time = true
   Ezmod.boot_progress = 0
   boot_timer(nil, "Init", Ezmod.boot_progress, "EZ Mod Loader")
 
+  if not NFS.getInfo(Ezmod.download_path, "directory") then
+    NFS.createDirectory(Ezmod.download_path)
+  end
+  if not NFS.getInfo(Ezmod.data_path .. "/modlist.lua", "file") then
+    NFS.write(Ezmod.data_path .. "/modlist.lua", "return {}")
+  end
+  Ezmod.modlist = load(Ezutil.read_file(Ezmod.data_path .. "/modlist.lua"), "modlist", "bt")() or {}
+
+  boot_timer(nil, "Loading Assets", Ezmod.boot_progress)
+  Ezmod.load_assets()
+  Ezmod.boot_progress = 0.05
+
   local mod_total = 0
+  local mods = {}
   Ezmod.list_mods(MODS_PATH, function(mod)
-    if not MODS[mod.id] then
-      MODS[mod.id] = mod
-      _MODS[#_MODS + 1] = mod
-      ALL_MODS[#ALL_MODS + 1] = mod
+    if not mods[mod.id] then
+      mods[mod.id] = mod
       mod_total = mod_total + 1
     else
       ERROR_MODS[#ERROR_MODS + 1] = { type = "duplicate", mod = mod }
@@ -99,7 +111,7 @@ function Ezmod.boot()
   end, true)
 
   boot_timer(nil, "Checking Dependencies", Ezmod.boot_progress)
-  for _, mod in pairs(MODS) do
+  for _, mod in pairs(mods) do
     if next(mod.deps or {}) then
       boot_timer(nil, "Checking Dependencies :: " .. mod.name, Ezmod.boot_progress)
       local succes, new_mods = mod:resolve()
@@ -109,11 +121,11 @@ function Ezmod.boot()
       mod_total = mod_total + new_mods
     end
   end
-  Ezmod.boot_progress = 0.1
+  Ezmod.boot_progress = 0.15
 
   boot_timer(nil, "Loading", Ezmod.boot_progress)
-  local mod_progress_add = (1 / mod_total) * 0.9
-  for _, mod in pairs(MODS) do
+  local mod_progress_add = (1 / mod_total) * 0.85
+  for _, mod in pairs(mods) do
     boot_timer(nil, "Loading :: " .. mod.name, Ezmod.boot_progress)
     mod:load()
     Ezmod.boot_progress = Ezmod.boot_progress + mod_progress_add
@@ -147,6 +159,70 @@ function Ezmod.check_mods_error()
       end,
     }))
     ERROR_MODS_CHECKED = true
+  end
+end
+
+function Ezmod.load_assets()
+  boot_timer(nil, "Loading Assets :: EZ Mod Icons", Ezmod.boot_progress)
+  G.ASSET_ATLAS.ezm_icons = {
+    name = "ezm_icons",
+    image = love.graphics.newImage(
+      Ezutil.new_file_data(Ezmod.path .. "/assets/" .. G.SETTINGS.GRAPHICS.texture_scaling .. "x/icons.png"),
+      {
+        mipmaps = true,
+        dpiscale = G.SETTINGS.GRAPHICS.texture_scaling,
+      }
+    ),
+    px = 32,
+    py = 32,
+  }
+end
+
+function Ezmod.save_modlist()
+  local code = "return {"
+  local empty = true
+  for key, value in pairs(Ezmod.modlist) do
+    local lua_key = key
+    if not key:match("^[%a%A_][%w_]*$") then
+      lua_key = string.format("['%s']", lua_key:gsub("'", "'"):gsub("\\", "\\\\"))
+    end
+    local lua_value = "true"
+    if type(value) == "table" then
+      lua_value = '"' .. table.concat(value, ".") .. '"'
+    end
+    code = code .. string.format("\n  %s = %s,", lua_key, lua_value)
+    empty = false
+  end
+  code = code .. (empty and "" or "\n") .. "}"
+  NFS.write(Ezmod.data_path .. "/modlist.lua", code)
+end
+
+function Ezmod.enable_mod(mod)
+  if mod.id ~= "ezmod" then
+    if version then
+      EZDBG(mod.version)
+      Ezmod.modlist[mod.id] = mod.version
+    else
+      Ezmod.modlist[mod.id] = true
+    end
+    Ezmod.save_modlist()
+  end
+  mod:load()
+  if G.EZ_MOD_MENU.mod_pager then
+    G.EZ_MOD_MENU.mod_pager:update()
+  end
+end
+
+function Ezmod.disable_mod(mod)
+  if id ~= "ezmod" then
+    if Ezmod.modlist[mod.id] then
+      Ezmod.modlist[mod.id] = nil
+      Ezmod.save_modlist()
+    end
+  end
+  mod:unload()
+  if G.EZ_MOD_MENU.mod_pager then
+    G.EZ_MOD_MENU.mod_pager:update()
   end
 end
 

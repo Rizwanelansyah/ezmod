@@ -3,7 +3,7 @@ local function close_ctx_menu()
   G.EZUI_CTX_MENU = nil
 end
 
-local function format_row(row, i)
+local function format_row(row, i, config)
   local tc = row.colour or G.C.GREY
   local nodes
   if type(row) == "string" then
@@ -21,7 +21,7 @@ local function format_row(row, i)
       nodes[#nodes + 1] = Ezui.Space(0.1)
     end
 
-    nodes[#nodes + 1] = Ezui.Text({ text = row.text, colour = tc, scale = 0.3, force_no_shadow = true })
+    nodes[#nodes + 1] = Ezui.Text({ text = row.text, colour = tc, scale = 0.3, force_no_shadow = true, hover = config.inverse_colour, hover_colour = config.inverse_colour and config.bg or nil })
   end
   local fn = row.fn or function() end
   local funcname = "ezui_ctx_menu_button" .. i .. "_on_click"
@@ -35,8 +35,8 @@ local function format_row(row, i)
       r = 0.05,
       minw = 3,
       hover = true,
-      hover_colour = darken(G.C.WHITE, 0.15),
-      colour = G.C.WHITE,
+      hover_colour = config.inverse_colour and darken(tc, 0.1) or darken(config.bg, 0.15),
+      colour = config.bg,
       button = funcname,
       align = "cl",
     },
@@ -47,16 +47,16 @@ end
 function ctx_menu_def(rows)
   local nodes = {}
   for i, row in ipairs(rows) do
-    nodes[#nodes + 1] = format_row(row, i)
+    nodes[#nodes + 1] = format_row(row, i, rows.config)
   end
   return Ezui.Root({
     c = { colour = G.C.CLEAR, padding = 0.1 },
     n = {
       Ezui.Row({
-        c = { colour = G.C.L_BLACK, emboss = 0.1, padding = 0.05, r = 0.1 },
+        c = { colour = rows.config.border, emboss = 0.1, padding = 0.05, r = 0.1 },
         n = {
           Ezui.Row({
-            c = { minw = 3, minh = 1, colour = G.C.WHITE, padding = 0.1, r = 0.1 },
+            c = { minw = 3, minh = 1, colour = rows.config.bg, padding = 0.1, r = 0.1 },
             n = nodes,
           }),
         },
@@ -70,6 +70,9 @@ local function ctx_menu(rows, at)
     G.EZUI_CTX_MENU:remove()
     G.EZUI_CTX_MENU = nil
   end
+  rows.config = rows.config or {}
+  rows.config.bg = rows.config.bg or G.C.WHITE
+  rows.config.border = rows.config.border or G.C.L_BLACK
 
   local major = at or G.ROOM_ATTACH
   local menu = UIBox({

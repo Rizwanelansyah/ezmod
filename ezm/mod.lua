@@ -115,12 +115,21 @@ function Mod:load()
     self:resolve()
   end
   if not Ezmod.boot_time and self.need_relog then
-    --TODO: relog balatro
+    --TODO: ask for relog balatro
   end
   self.loaded = true
   if not MODS[self.id] then
     MODS[self.id] = self
-    _MODS[#_MODS + 1] = self
+
+    local exists = false
+    for _, value in ipairs(ALL_MODS) do
+      if value == self then
+        exists = true
+      end
+    end
+    if not exists then
+      ALL_MODS[#ALL_MODS + 1] = self
+    end
   end
   --TODO: run mod files
 end
@@ -130,16 +139,10 @@ function Mod:unload()
     return
   end
   if self.need_relog then
-    --TODO: relog baltro
+    --TODO: ask for relog baltro
   end
   if MODS[self.id] then
     MODS[self.id] = nil
-    for i, mod in pairs(_MODS) do
-      if mod == self then
-        table.remove(_MODS, i)
-        break
-      end
-    end
   end
   self.loaded = false
   --TODO: unload mod (only work for EZ API only)

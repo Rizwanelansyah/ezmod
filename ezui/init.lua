@@ -164,15 +164,15 @@ function parse_text(text, conf, var)
             has_bg = true
           end
           result[#result + 1] = Ezui.Col({
-            c = { colour = bgcolor, padding = 0.05 * conf.scale * scale, align = "cm" },
+            c = { colour = bgcolor or conf.colour, padding = 0.05 * conf.scale * scale, align = "cm" },
             n = {
               Ezui.Space(0.3 * conf.scale * scale),
-              Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale * scale }),
+              Ezui.Text({ text = eval(val, var), colour = fg and eval(fg, var) or conf.colour, scale = conf.scale * scale }),
               Ezui.Space(0.3 * conf.scale * scale),
             },
           })
         else
-          result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale * scale })
+          result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = fg and eval(fg, var) or conf.colour, scale = conf.scale * scale })
         end
       end
     elseif char == "#" then

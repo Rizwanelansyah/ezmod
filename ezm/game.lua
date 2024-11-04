@@ -28,5 +28,6 @@ function Game:set_ezm_globals()
     search = "",
     mods_current_tab = "loaded",
     mod_pager = nil,
+    setting_path = "main",
   }
 end

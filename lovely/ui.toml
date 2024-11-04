@@ -255,3 +255,60 @@ match_indent = true
 payload = """
 self.ARGS.button_colours[2] = (((collided_button.config.hover and collided_button.states.hover.is) or (collided_button.last_clicked and collided_button.last_clicked > G.TIMERS.REAL - 0.1)) and (self.config.hover_colour or G.C.UI.HOVER) or nil)
 """
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "table.insert(but_UI_label, {n=G.UIT.R, config={align = \"cm\", padding = 0, minw = args.minw, maxw = args.maxw}, nodes={"
+position = "at"
+match_indent = true
+payload = """
+table.insert(but_UI_label, {n=G.UIT.R, config={align = "cm", padding = 0, minw = not args.icon and args.minw or nil, maxw = not args.icon and args.maxw or nil}, nodes={
+"""
+
+[[patches]]
+[patches.pattern]
+target = "functions/UI_definitions.lua"
+pattern = "if args.count then"
+position = "at"
+match_indent = true
+payload = """
+if args.count then 
+  table.insert(but_UI_label, 
+  {n=G.UIT.R, config={align = "cm", minh = 0.4}, nodes={
+    {n=G.UIT.T, config={scale = 0.35,text = args.count.tally..' / '..args.count.of, colour = {1,1,1,0.9}}}
+  }}
+  )
+end
+
+if args.icon then
+  local icon
+  if type(args.icon) == "string" then
+    icon = Ezui.Image(args.icon, args.scale, args.scale)
+  else
+    icon = Ezui.Sprite(args.icon, args.scale, args.scale, args.icon_offset)
+  end
+  but_UI_label = {{n = G.UIT.C, config = { align = "cl", minw = args.minw }, nodes = {
+    {n=G.UIT.B, config = { w = 0.1, h = 0 }},
+    {n=G.UIT.C, config = { align = "lm" }, nodes = {icon}},
+    {n=G.UIT.B, config = { w = 0.2, h = 0 }},
+    {n=G.UIT.C, nodes = but_UI_label}
+  }}}
+end
+
+if false then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/ui.lua"
+pattern = "if not button_active then"
+position = "at"
+match_indent = true
+payload = """
+local collided_button = self.config.button_UIE or self
+local hover = (collided_button.config.hover and collided_button.states.hover.is) or (collided_button.last_clicked and collided_button.last_clicked > G.TIMERS.REAL - 0.1)
+if hover and self.config.hover_colour then
+  love.graphics.setColor(self.config.hover_colour)
+elseif not button_active then
+"""

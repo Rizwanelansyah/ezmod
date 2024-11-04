@@ -1,6 +1,6 @@
 local info_queue = {}
 local loading_name
-local max_queue = 20
+local max_queue = 15
 
 function boot_timer(_, next, progress, _new_loading)
   if _new_loading then
@@ -36,7 +36,7 @@ function boot_timer(_, next, progress, _new_loading)
     local font = love.graphics.getFont()
     local height = font:getHeight()
     local y = realh - 30 - 5 - (#info_queue * height)
-    for i = 2, #info_queue do
+    for i = 1, #info_queue - 1 do
       love.graphics.setColor(1, 1, 1, 1 - ((1 / max_queue) * ((#info_queue - i) - 1)))
       love.graphics.print("> " .. info_queue[i], 5, y)
       y = y + height
