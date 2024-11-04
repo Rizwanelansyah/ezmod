@@ -80,7 +80,7 @@ function parse_text(text, conf, var)
       end
       cur = char
       i = i + 1
-      local fg, bg, val
+      local fg, bg, text_scale, val
       local fail = false
 
       if i <= len and strat(text, i) ~= ":" and strat(text, i) ~= "]" then
@@ -99,11 +99,25 @@ function parse_text(text, conf, var)
         i = i + 1
         cur = cur .. ":"
         bg = ""
-        while i <= len and strat(text, i) ~= "]" do
+        while i <= len and strat(text, i) ~= "]" and strat(text, i) ~= ":" do
           if strat(text, i) == "%" then
             i = i + 1
           end
           bg = bg .. strat(text, i)
+          i = i + 1
+        end
+        cur = cur .. bg
+      end
+
+      if i <= len and strat(text, i) == ":" then
+        i = i + 1
+        cur = cur .. ":"
+        text_scale = ""
+        while i <= len and strat(text, i) ~= "]" do
+          if strat(text, i) == "%" then
+            i = i + 1
+          end
+          text_scale = text_scale .. strat(text, i)
           i = i + 1
         end
         cur = cur .. bg
@@ -141,20 +155,24 @@ function parse_text(text, conf, var)
       if not fail then
         cur = nil
         local bgcolor = eval(bg, var)
+        local scale = 1
+        if text_scale then
+          scale = eval(text_scale, var) or scale
+        end
         if bgcolor then
           if not has_bg then
             has_bg = true
           end
           result[#result + 1] = Ezui.Col({
-            c = { colour = bgcolor, padding = 0.05 * conf.scale, r = 0.02 * conf.scale },
+            c = { colour = bgcolor, padding = 0.05 * conf.scale * scale, align = "cm" },
             n = {
-              Ezui.Space(0.3 * conf.scale),
-              Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale }),
-              Ezui.Space(0.3 * conf.scale),
+              Ezui.Space(0.3 * conf.scale * scale),
+              Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale * scale }),
+              Ezui.Space(0.3 * conf.scale * scale),
             },
           })
         else
-          result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale })
+          result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = eval(fg, var), scale = conf.scale * scale })
         end
       end
     elseif char == "#" then
@@ -175,6 +193,43 @@ function parse_text(text, conf, var)
         i = i + 1
       end
       result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = conf.colour, scale = conf.scale })
+    elseif char == "@" then
+      if cur then
+        result[#result + 1] = Ezui.Text({ text = cur, colour = conf.colour, scale = conf.scale })
+      end
+      cur = char
+      i = i + 1
+      local object
+      local fail = false
+      if i <= len and strat(text, i) == "(" then
+        cur = cur .. '('
+        i = i + 1
+      end
+
+      if i <= len and strat(text, i) ~= ")" then
+        object = ""
+        while i <= len and strat(text, i) ~= ")" do
+          if strat(text, i) == "%" then
+            i = i + 1
+          end
+          object = object .. strat(text, i)
+          i = i + 1
+        end
+        cur = cur .. object
+      end
+
+      if i <= len and strat(text, i) == ")" then
+        cur = cur .. strat(text, i)
+        i = i + 1
+      else
+        fail = true
+      end
+
+      if not fail then
+        cur = nil
+        local o = eval(object, var)
+        result[#result + 1] = { n = G.UIT.O, config = { object = o or Moveable() } }
+      end
     elseif char == "%" then
       cur = (cur or "") .. strat(text, i + 1)
       i = i + 2
@@ -197,14 +252,21 @@ function Ezui.FmText(lines, opt)
   if type(lines) == "string" then
     lines = { lines }
   end
+  local var = {}
+  for key, value in pairs(opt.v) do
+    var[key] = value
+  end
+  var.__opt = opt
   for i, line in ipairs(lines) do
     if opt.c.line_space and i ~= 1 then
       parsed_lines[#parsed_lines + 1] = Ezui.Row({ n = { Ezui.Space(0.01, opt.c.line_space * (opt.t.scale or 1)) } })
     end
-    parsed_lines[#parsed_lines + 1] =
-      Ezui.Row({ n = {
-        Ezui.Col({ n = parse_text(line, opt.t, opt.v or {}) }),
-      }, c = opt.c })
+    parsed_lines[#parsed_lines + 1] = Ezui.Row({
+      n = {
+        Ezui.Col({ c = { align = "cm" }, n = parse_text(line, opt.t, var) }),
+      },
+      c = opt.c,
+    })
   end
   return Ezui.Row({ c = opt.c, n = parsed_lines })
 end
@@ -257,14 +319,14 @@ function Ezui.Image(path, width, height)
     G.ASSET_ATLAS[key] = data
     s = data
   end
-  return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[key]) }}
+  return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[key]) } }
 end
 
 function Ezui.Sprite(name, width, height, offset)
   if type(name) == "table" then
-    return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, name, offset) }}
+    return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, name, offset) } }
   end
-  return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[name], offset) }}
+  return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[name], offset) } }
 end
 
 function Ezui.Stack(nodes)

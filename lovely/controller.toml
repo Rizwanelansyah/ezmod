@@ -62,6 +62,16 @@ self.held_key_times[key] = nil
 """
 
 [[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "if G.STATE == G.STATES.SPLASH then"
+position = "at"
+match_indent = true
+payload = """
+if not G.OVERLAY_MENU and G.STATE == G.STATES.SPLASH then
+"""
+
+[[patches]]
 [patches.copy]
 target = "engine/controller.lua"
 position = "append"

@@ -54,4 +54,11 @@ function G.FUNCS.mod_menu_mods_switch_tab(name)
   tab.disable_button = true
 
   G.EZ_MOD_MENU.mods_current_tab = name
+  if name == "loaded" then
+    G.EZ_MOD_MENU.mod_pager:set_filter(function (mod)
+      return mod.loaded
+    end)
+  elseif name == "all" then
+    G.EZ_MOD_MENU.mod_pager:set_filter()
+  end
 end

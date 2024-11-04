@@ -4,7 +4,7 @@ function UI.mod_box(mod)
   local control_buttons = {}
   local _control_buttons = {
     mod.loaded and { "Disable", "disable", G.C.RED } or { "Enable", "enable", G.C.GREEN },
-    mod.installed and { "Delete", "delete", darken(G.C.RED, 0.2) }
+    mod.downloaded and { "Delete", "delete", darken(G.C.RED, 0.2) }
       or { "Download", "download", darken(G.C.GREEN, 0.1) },
     {
       "...",
@@ -27,20 +27,26 @@ function UI.mod_box(mod)
             colour = G.C.ORANGE,
             icon = { atlas = G.ASSET_ATLAS["tags"], offset = { x = 2, y = 0 } },
           },
-        }, G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_control_other_area"))
+        }, G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_control_" .. mod.id .. "_other_area"))
       end,
     },
   }
 
   for i, btn in ipairs(_control_buttons) do
-    local button =
-      Ezui.Button(btn[1], 2, btn[3], "ez_mod_control_" .. btn[2] .. "_button", btn[4], { scale = 0.3, ref_table = mod })
+    local button = Ezui.Button(
+      btn[1],
+      2,
+      btn[3],
+      "ez_mod_control_" .. mod.id .. "_" .. btn[2] .. "_button",
+      btn[4],
+      { scale = 0.3, ref_table = mod }
+    )
     button.nodes[1].config.shadow = false
     control_buttons[i] = Ezui.Row({
       c = { padding = 0.1 },
       n = {
         Ezui.Stack({
-          Ezui.Box({ id = "ez_mod_control_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
+          Ezui.Box({ id = "ez_mod_control_" .. mod.id .. "_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
           button,
         }),
       },
@@ -74,36 +80,39 @@ function UI.mod_box(mod)
                               float = true,
                               shadow = true,
                             }),
-                            #mod.author == 1 and Ezui.Space(0.2),
-                            #mod.author == 1 and Ezui.Col({
-                              c = { align = "lb" },
-                              n = {
-                                Ezui.Text({
-                                  text = mod.author[1],
-                                  colour = G.C.UI.TEXT_INACTIVE,
-                                  scale = 0.3,
-                                }),
-                              },
-                            }),
+                            #mod.author == 1 and Ezui.Space(0.2) or nil,
+                            #mod.author == 1
+                                and Ezui.Col({
+                                  c = { align = "lb" },
+                                  n = {
+                                    Ezui.Text({
+                                      text = "by " .. mod.author[1],
+                                      colour = G.C.UI.TEXT_INACTIVE,
+                                      scale = 0.3,
+                                    }),
+                                  },
+                                })
+                              or nil,
                           },
                         }),
                         mod.loaded
-                          and Ezui.Row({
-                            c = { align = "br" },
-                            n = {
-                              Ezui.Text({
-                                text = "Loaded",
-                                colour = G.C.BLUE,
-                                scale = 0.3,
-                              }),
-                              Ezui.Space(0.2),
-                              Ezui.Text({
-                                text = "v" .. table.concat(mod.version, "."),
-                                colour = G.C.GREEN,
-                                scale = 0.3,
-                              }),
-                            },
-                          }),
+                            and Ezui.Row({
+                              c = { align = "br" },
+                              n = {
+                                Ezui.Text({
+                                  text = "Loaded",
+                                  colour = G.C.BLUE,
+                                  scale = 0.3,
+                                }),
+                                Ezui.Space(0.2),
+                                Ezui.Text({
+                                  text = "v" .. table.concat(mod.version, "."),
+                                  colour = G.C.GREEN,
+                                  scale = 0.3,
+                                }),
+                              },
+                            })
+                          or nil,
                       }),
                     },
                   }),
@@ -128,6 +137,7 @@ function UI.mod_box(mod)
       }),
 
       Ezui.Row({
+        c = { minw = 0.3 },
         n = (function()
           local tags = {}
           for i, tag in ipairs(mod.tags or {}) do
@@ -146,63 +156,82 @@ function UI.mod_box(mod)
   })
 end
 
-function UI.error_description(type, mod)
+function UI.error_description(error)
+  local type = error.type
+  local mod = error.mod
+  local error_desc
   local function row(node, config)
     return Ezui.Row({ c = config or { align = "cm" }, n = { node } })
   end
   if type == "duplicate" then
-    return Ezui.Row({
-      c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08 },
-      n = {
-        row(Ezui.Text({ text = "Duplicate Mod ID", colour = G.C.RED, scale = 0.4 }), { padding = 0.1, align = "sm" }),
-        row(Ezui.Box({ h = 0.03, w = 5, colour = G.C.GREY })),
-        Ezui.FmText({
-          "[G.C.ORANGE]{mod.name} and [G.C.ORANGE]{MODS[mod.id].name}",
-          "have a same [G.C.WHITE:G.C.RED]{'ID'} which is [G.C.BLUE]{mod.id}.",
-        }, { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } }),
-      },
-    })
+    error_desc = Ezui.FmText({
+      "[G.C.ORANGE]{mod.name} and [G.C.ORANGE]{MODS[mod.id].name}",
+      "have a same [G.C.WHITE:G.C.RED]{'ID'} which is [G.C.BLUE]{mod.id}.",
+    }, { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } })
   elseif type == "missing_deps" then
     local text = {
-      "Missing dependencies for [G.C.ORANGE]{mod.name}.",
+      "[G.C.ORANGE]{mod.name} missing dependencies.",
     }
     for mod_id, spec in pairs(mod.deps) do
       if not spec.ok then
-        text[#text + 1] = string.format("[:G.C.RED]{'ERROR'} Mod [G.C.ORANGE]{'%s'} not found", mod_id)
+        if MODS[mod_id] then
+          local indent = string.rep(" ", 8)
+          text[#text + 1] =
+            string.format("[:G.C.RED]{'ERROR'} Mod with id [G.C.ORANGE]{'%s'} version [G.C.RED]{'not match'} ", mod_id)
+          text[#text + 1] = string.format(
+            indent .. "- loaded version: [G.C.GREEN]{'%s'}",
+            "v" .. table.concat(MODS[mod_id].version, ".")
+          )
+
+          if spec.version.upper then
+            text[#text + 1] = string.format(
+              indent .. "- required version: [G.C.GREEN]{'%s'} or [G.C.IMPORTANT]{'upper'}",
+              "v" .. table.concat(spec.version.upper, ".")
+            )
+          elseif spec.version.lower then
+            text[#text + 1] = string.format(
+              indent .. "- required version: [G.C.GREEN]{'%s'} or [G.C.IMPORTANT]{'lower'}",
+              "v" .. table.concat(spec.version.lower, ".")
+            )
+          elseif spec.version.exact then
+            text[#text + 1] = string.format(
+              indent .. "- required version: [G.C.GREEN]{'%s'}",
+              "v" .. table.concat(spec.version.exact, ".")
+            )
+          elseif spec.version.from and spec.version.to then
+            text[#text + 1] = string.format(
+              indent .. "- required version: [G.C.GREEN]{'%s'} [G.C.IMPORTANT]{'to'} [G.C.GREEN]{'%s'}",
+              "v" .. table.concat(spec.version.from, "."),
+              "v" .. table.concat(spec.version.to, ".")
+            )
+          end
+        else
+          text[#text + 1] =
+            string.format("[:G.C.RED]{'ERROR'} Mod with id [G.C.ORANGE]{'%s'} [G.C.RED]{'not found'} ", mod_id)
+        end
       else
-        text[#text + 1] = string.format("[:G.C.GREEN]{'OK'} Mod [G.C.ORANGE]{'%s'} loaded", mod_id)
+        text[#text + 1] = string.format("[:G.C.GREEN:1.2]{' OK '} Mod with id [G.C.ORANGE]{'%s'} loaded", mod_id)
       end
     end
-    return Ezui.Row({
-      c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08 },
-      n = {
-        row(
-          Ezui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }),
-          { padding = 0.1, align = "sm" }
-        ),
-        row(Ezui.Box({ h = 0.03, w = 5, colour = G.C.GREY })),
-        Ezui.FmText(
-          text,
-          { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } }
-        ),
-      },
-    })
+
+    local formated = Ezui.FmText(
+      text,
+      { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "tl", line_space = 0.1 }, v = { mod = mod } }
+    )
+    formated.nodes[1].config = { align = "cm" }
+    error_desc = row(formated, { padding = 0.1, align = "cm" })
   end
+  return Ezui.Row({
+    c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08, minw = 7 },
+    n = {
+      row(Ezui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }), { padding = 0.1, align = "sm" }),
+      row(Ezui.Box({ h = 0.03, w = 6, colour = G.C.GREY })),
+      error_desc,
+    },
+  })
 end
 
 function UI.error_mods()
-  local contents = {}
-
-  for i, error in ipairs(ERROR_MODS) do
-    local error_desc = UI.error_description(error.type, error.mod)
-    if error_desc then
-      contents[#contents + 1] = error_desc
-    end
-    if i == 4 then
-      break
-    end
-  end
-
   return Ezui.DarkBGRoot({
     Ezui.Row({
       c = { align = "cm", r = 0.3, colour = G.C.WHITE, emboss = 0.1 },
@@ -230,8 +259,10 @@ function UI.error_mods()
                   },
                 }),
                 Ezui.Row({
-                  c = { align = "cm", padding = 0.2, colour = G.C.L_BLACK, emboss = 0.05, r = 0.1 },
-                  n = contents,
+                  c = { align = "cm", padding = 0.2, colour = G.C.L_BLACK, emboss = 0.05, r = 0.1, minw = 6, minh = 5 },
+                  n = {
+                    { n = G.UIT.O, config = { object = Moveable(), id = "ezm_mod_errors_container" } },
+                  },
                 }),
               },
             }),
@@ -319,6 +350,7 @@ function UI.mod_menu_browser()
 end
 
 function UI.mod_menu_mods()
+  G.EZ_MOD_MENU.mod_pager = G.EZ_MOD_MENU.mod_pager or Ezui.Pager(_MODS, 3):cycle()
   return Ezui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
@@ -328,10 +360,12 @@ function UI.mod_menu_mods()
           Ezui.Col({
             c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
-              Ezui.Row({ n = {
-                UI.mod_menu_mods_tabs(),
-              } }),
-              Ezui.Pager(_MODS, 3):ui(17, 9.3, UI.mod_box),
+              Ezui.Row({
+                n = {
+                  UI.mod_menu_mods_tabs(),
+                  G.EZ_MOD_MENU.mod_pager:ui(17, 9.3, UI.mod_box),
+                },
+              }),
             },
           }),
         },

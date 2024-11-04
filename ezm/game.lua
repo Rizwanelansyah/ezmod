@@ -1,17 +1,13 @@
-local g_update = Game.update
+local game_update = Game.update
 function Game:update(...)
-  g_update(self, ...)
-  if not ERROR_MODS_CHECKED and #ERROR_MODS > 0 then
-    G.E_MANAGER:add_event(Event({
-      func = function()
-        G.FUNCS.overlay_menu({
-          definition = require("ezm.ui").error_mods(),
-        })
-        return true
-      end,
-    }))
-    ERROR_MODS_CHECKED = true
-  end
+  game_update(self, ...)
+  Ezmod.check_mods_error()
+end
+
+local game_splash_screen = Game.splash_screen
+function Game:splash_screen()
+  Ezmod.check_mods_error()
+  game_splash_screen(self)
 end
 
 local g_init = Game.init
@@ -31,5 +27,6 @@ function Game:set_ezm_globals()
     current_tab = "mods",
     search = "",
     mods_current_tab = "loaded",
+    mod_pager = nil,
   }
 end

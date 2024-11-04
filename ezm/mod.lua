@@ -7,27 +7,28 @@ function Mod:init(opt)
   self.tags = opt.tags
   self.path = opt.path
   self.icon = opt.icon
-  self.installed = opt.installed
+  self.downloaded = opt.downloaded
   self.loaded = false
   self.version = opt.version
   self.git_tag = opt.git_tag
   self.author = opt.author
   self.need_relog = opt.need_relog
+  self.has_error = false
 
   self.desc = {}
   if opt.desc then
-    for line in opt.desc:gmatch("([^\n]*)\n?") do
+    for line in opt.desc:gsub("\\\n", ""):gmatch("([^\n]*)\n?") do
       self.desc[#self.desc + 1] = line
     end
   end
 
   self.deps = {}
-  for _, dep in ipairs(opt.deps) do
-    if type(dep) == "string" then
-      self.deps[dep] = { ok = false }
+  for dep_id, dep_or_version in pairs(opt.deps) do
+    if type(dep_id) == "number" then
+      self.deps[dep_or_version] = { ok = false }
     else
-      self.deps[dep.id] = {
-        version = dep.version and Ezutil.parse_version_spec(dep.version),
+      self.deps[dep_id] = {
+        version = dep_or_version and Ezutil.parse_version_spec(dep_or_version),
         ok = false,
       }
     end
@@ -90,17 +91,24 @@ function Mod:resolve()
         local dep_success, dep_new_mods = valid_mod:resolve()
         if not dep_success then
           succes = false
+        else
+          spec.ok = true
+          new_mods = new_mods + dep_new_mods
         end
-        spec.ok = true
-        new_mods = new_mods + dep_new_mods
       end
     end
+  end
+  if not succes then
+    self.loaded = false
+    self.has_error = true
+  else
+    self.has_error = false
   end
   return succes, new_mods
 end
 
 function Mod:load()
-  if self.loaded then
+  if self.loaded or self.has_error then
     return
   end
   if not Ezmod.boot_time then
@@ -110,6 +118,10 @@ function Mod:load()
     --TODO: relog balatro
   end
   self.loaded = true
+  if not MODS[self.id] then
+    MODS[self.id] = self
+    _MODS[#_MODS + 1] = self
+  end
   --TODO: run mod files
 end
 
@@ -119,6 +131,15 @@ function Mod:unload()
   end
   if self.need_relog then
     --TODO: relog baltro
+  end
+  if MODS[self.id] then
+    MODS[self.id] = nil
+    for i, mod in pairs(_MODS) do
+      if mod == self then
+        table.remove(_MODS, i)
+        break
+      end
+    end
   end
   self.loaded = false
   --TODO: unload mod (only work for EZ API only)
