@@ -9,7 +9,7 @@ function Pager:init(data, max)
 end
 
 function Pager:update()
-  self:filter()
+  self:filter_data()
   self.max_page = 1
   local len, field = 0, next(self.data)
   while field do
@@ -48,25 +48,18 @@ function Pager:ui(width, height, fn)
                 self:prev_page()
               end),
               Ezui.Space(0.3),
-              Ezui.Button(
-                nil,
-                (width or 10) * 0.5,
-                G.C.RED,
-                "ezui_pager_location",
-                function()
-                  local rows = {}
-                  for i = 1, self.max_page do
-                    rows[#rows+1] = {
-                      text = tostring(i),
-                      fn = function ()
-                        self:set_page(i)
-                      end,
-                    }
-                  end
-                  Ezui.CtxMenu(rows, G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_location"))
-                end,
-                { ref_table = self, text_field = "location_display" }
-              ),
+              Ezui.Button(nil, (width or 10) * 0.5, G.C.RED, "ezui_pager_location", function()
+                local rows = {}
+                for i = 1, self.max_page do
+                  rows[#rows + 1] = {
+                    text = tostring(i),
+                    fn = function()
+                      self:set_page(i)
+                    end,
+                  }
+                end
+                Ezui.CtxMenu(rows, G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_location"))
+              end, { ref_table = self, text_field = "location_display" }),
               Ezui.Space(0.3),
               Ezui.Button(">", 0.5, G.C.RED, "ezui_pager_next", function()
                 self:next_page()
@@ -83,6 +76,7 @@ function Pager:page(number)
   self.current_page = math.max(1, math.min(self.max_page, number or self.current_page))
 
   local data = {}
+  local unique_ids = {}
   local i = 1
   local c = 1
   local from = (self.current_page - 1) * self.max
@@ -99,19 +93,29 @@ function Pager:page(number)
   return data
 end
 
-function Pager:set_filter(fn)
-  self.filter_fn = fn
-  self:update()
-end
-
-function Pager:filter()
-  if not self.filter_fn then
+function Pager:filter_data()
+  if not self.filter and not self.unique_id then
     self.data = self._data
     return
   end
   self.data = {}
+  local unique_ids = {}
   for _, d in pairs(self._data) do
-    if self.filter_fn(d) then
+    local unique = false
+    local id = self.unique_id(d)
+    if self.unique_id then
+      local exists = unique_ids[id]
+      if not exists then
+        unique = true
+      end
+    end
+    
+    if self.filter and not self.filter(d) then
+      unique = false
+    end
+
+    if unique then
+      unique_ids[id] = true
       self.data[#self.data + 1] = d
     end
   end

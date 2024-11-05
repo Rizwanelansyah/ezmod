@@ -75,6 +75,7 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
       }
 
       local mod = Mod(spec)
+      ALL_MODS[#ALL_MODS+1] = mod
       fn(mod)
     elseif deep_load then
       Ezmod.list_mods(path, fn, deep_load, reverse)

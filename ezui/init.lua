@@ -167,12 +167,20 @@ function parse_text(text, conf, var)
             c = { colour = bgcolor or conf.colour, padding = 0.05 * conf.scale * scale, align = "cm" },
             n = {
               Ezui.Space(0.3 * conf.scale * scale),
-              Ezui.Text({ text = eval(val, var), colour = fg and eval(fg, var) or conf.colour, scale = conf.scale * scale }),
+              Ezui.Text({
+                text = eval(val, var),
+                colour = fg and eval(fg, var) or conf.colour,
+                scale = conf.scale * scale,
+              }),
               Ezui.Space(0.3 * conf.scale * scale),
             },
           })
         else
-          result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = fg and eval(fg, var) or conf.colour, scale = conf.scale * scale })
+          result[#result + 1] = Ezui.Text({
+            text = eval(val, var),
+            colour = fg and eval(fg, var) or conf.colour,
+            scale = conf.scale * scale,
+          })
         end
       end
     elseif char == "#" then
@@ -202,7 +210,7 @@ function parse_text(text, conf, var)
       local object
       local fail = false
       if i <= len and strat(text, i) == "(" then
-        cur = cur .. '('
+        cur = cur .. "("
         i = i + 1
       end
 
@@ -333,6 +341,7 @@ function Ezui.Stack(nodes)
   return { n = G.UIT.STK, nodes = nodes }
 end
 
+Ezui.Ask = require("ezui.ask")
 Ezui.Pager = require("ezui.pager")
 Ezui.CtxMenu = require("ezui.ctx_menu")
 

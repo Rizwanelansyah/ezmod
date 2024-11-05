@@ -23,11 +23,13 @@ function Game:set_ezm_globals()
     MODS_TAB = copy_table(self.C.GREY),
   }
   self.EZUI_CTX_MENU = nil
+  self.EZUI_ASK_MENU = nil
   self.EZ_MOD_MENU = {
     current_tab = "mods",
     search = "",
     mods_current_tab = "loaded",
     mod_pager = nil,
+    listed_mods = {},
     setting_path = "main",
   }
 end

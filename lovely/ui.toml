@@ -215,6 +215,13 @@ pattern = "if self.debug_tools then"
 position = "before"
 match_indent = true
 payload = """
+if self.EZUI_ASK_MENU then
+  love.graphics.push()
+  self.EZUI_ASK_MENU:translate_container()
+  self.EZUI_ASK_MENU:draw()
+  love.graphics.pop()
+end
+
 if self.EZUI_CTX_MENU then
   love.graphics.push()
   self.EZUI_CTX_MENU:translate_container()

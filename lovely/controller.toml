@@ -72,6 +72,18 @@ if not G.OVERLAY_MENU and G.STATE == G.STATES.SPLASH then
 """
 
 [[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "G.FUNCS:exit_overlay_menu()"
+position = "at"
+match_indent = true
+payload = """
+if not G.EZUI_ASK_MENU then
+  G.FUNCS:exit_overlay_menu()
+end
+"""
+
+[[patches]]
 [patches.copy]
 target = "engine/controller.lua"
 position = "append"

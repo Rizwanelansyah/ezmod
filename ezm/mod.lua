@@ -118,18 +118,12 @@ function Mod:load()
     --TODO: ask for relog balatro
   end
   self.loaded = true
-  if not MODS[self.id] then
+  local loaded_mod = MODS[self.id]
+  if not loaded_mod or not Ezutil.version_equal(self.version, loaded_mod) then
+    if loaded_mod then
+      loaded_mod:unload()
+    end
     MODS[self.id] = self
-
-    local exists = false
-    for _, value in ipairs(ALL_MODS) do
-      if value == self then
-        exists = true
-      end
-    end
-    if not exists then
-      ALL_MODS[#ALL_MODS + 1] = self
-    end
   end
   --TODO: run mod files
 end

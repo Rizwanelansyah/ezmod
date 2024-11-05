@@ -54,12 +54,15 @@ function G.FUNCS.mod_menu_mods_switch_tab(name)
   tab.disable_button = true
 
   G.EZ_MOD_MENU.mods_current_tab = name
+  local pager = G.EZ_MOD_MENU.mod_pager
   if name == "loaded" then
-    G.EZ_MOD_MENU.mod_pager:set_filter(function (mod)
+    function pager.filter(mod)
       return mod.loaded
-    end)
+    end
+    pager:update()
   elseif name == "all" then
     Ezmod.list_downloaded_mods()
-    G.EZ_MOD_MENU.mod_pager:set_filter()
+    pager.filter = nil
+    pager:update()
   end
 end

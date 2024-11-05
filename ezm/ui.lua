@@ -3,8 +3,33 @@ local UI = {}
 function UI.mod_box(mod)
   local control_buttons = {}
   local icons = G.ASSET_ATLAS.ezm_icons
-  local _control_buttons = {
-    mod.loaded and {
+  local base_id = "ez_mod_control_" .. mod.id .. "_v" .. (table.concat(mod.version, "_"))
+  local ctx_rows = {
+    {
+      text = "Detail",
+      colour = mix_colours(G.C.WHITE, G.C.PURPLE, 0.4),
+      icon = { atlas = icons, offset = { x = 0, y = 1 } },
+    },
+  }
+
+  if mod.loaded then
+    ctx_rows[#ctx_rows + 1] = {
+      text = "Setting",
+      colour = mix_colours(G.C.WHITE, G.C.BLUE, 0.4),
+      icon = { atlas = icons, offset = { x = 2, y = 1 } },
+    }
+
+    ctx_rows[#ctx_rows + 1] = {
+      text = "Switch version",
+      colour = mix_colours(G.C.WHITE, G.C.ORANGE, 0.4),
+      icon = { atlas = icons, offset = { x = 1, y = 1 } },
+    }
+  end
+
+  local _control_buttons = {}
+
+  if mod.loaded then
+    _control_buttons[#_control_buttons + 1] = {
       "Disable",
       "disable",
       darken(G.C.ORANGE, 0.1),
@@ -13,7 +38,9 @@ function UI.mod_box(mod)
       end,
       icons,
       { x = 3, y = 0 },
-    } or {
+    }
+  else
+    _control_buttons[#_control_buttons + 1] = {
       "Enable",
       "enable",
       G.C.GREEN,
@@ -22,36 +49,43 @@ function UI.mod_box(mod)
       end,
       icons,
       { x = 2, y = 0 },
-    },
+    }
+  end
 
-    mod.downloaded and { "Delete", "delete", G.C.RED, nil, icons, { x = 1, y = 0 } }
-      or { "Download", "download", darken(G.C.GREEN, 0.2), nil, icons },
-
-    {
-      "...",
-      "other",
-      G.C.L_BLACK,
+  if mod.downloaded then
+    _control_buttons[#_control_buttons + 1] = {
+      "Delete",
+      "delete",
+      G.C.RED,
       function()
-        Ezui.CtxMenu({
-          config = { bg = G.C.GREY, inverse_colour = true },
-          {
-            text = "Setting",
-            colour = mix_colours(G.C.WHITE, G.C.BLUE, 0.4),
-            icon = { atlas = icons, offset = { x = 2, y = 1 } },
-          },
-          {
-            text = "Detail",
-            colour = mix_colours(G.C.WHITE, G.C.PURPLE, 0.4),
-            icon = { atlas = icons, offset = { x = 0, y = 1 } },
-          },
-          {
-            text = "Switch version",
-            colour = mix_colours(G.C.WHITE, G.C.ORANGE, 0.4),
-            icon = { atlas = icons, offset = { x = 1, y = 1 } },
-          },
-        }, G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_control_" .. mod.id .. "_other_area"))
+        Ezui.Ask(string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [::1.5]{'?'}", mod.name), {
+          { text = "Yes", colour = G.C.RED },
+          "No",
+        })
       end,
-    },
+      icons,
+      { x = 1, y = 0 },
+    }
+  else
+    _control_buttons[#_control_buttons + 1] = {
+      "Download",
+      "download",
+      darken(G.C.GREEN, 0.2),
+      function()
+        --TODO: download the mod
+      end,
+      icons,
+    }
+  end
+
+  ctx_rows.config = { bg = G.C.GREY, inverse_colour = true }
+  _control_buttons[#_control_buttons + 1] = {
+    "...",
+    "other",
+    G.C.L_BLACK,
+    function()
+      Ezui.CtxMenu(ctx_rows, G.OVERLAY_MENU:get_UIE_by_ID(base_id .. "_other_area"))
+    end,
   }
 
   for i, btn in ipairs(_control_buttons) do
@@ -59,7 +93,7 @@ function UI.mod_box(mod)
       btn[1],
       2,
       btn[3],
-      "ez_mod_control_" .. mod.id .. "_" .. btn[2] .. "_button",
+      base_id .. "_" .. btn[2] .. "_button",
       btn[4],
       { scale = 0.3, ref_table = mod, icon = btn[5], icon_offset = btn[6] }
     )
@@ -68,7 +102,7 @@ function UI.mod_box(mod)
       c = { padding = 0.1 },
       n = {
         Ezui.Stack({
-          Ezui.Box({ id = "ez_mod_control_" .. mod.id .. "_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
+          Ezui.Box({ id = base_id .. "_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
           button,
         }),
       },
@@ -372,7 +406,12 @@ function UI.mod_menu_browser()
 end
 
 function UI.mod_menu_mods()
-  G.EZ_MOD_MENU.mod_pager = G.EZ_MOD_MENU.mod_pager or Ezui.Pager(ALL_MODS, 3):cycle()
+  local pager = G.EZ_MOD_MENU.mod_pager or Ezui.Pager(ALL_MODS, 3):cycle()
+  G.EZ_MOD_MENU.mod_pager = pager
+  function pager.unique_id(mod)
+    return mod.id
+  end
+
   return Ezui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
@@ -385,7 +424,7 @@ function UI.mod_menu_mods()
               Ezui.Row({
                 n = {
                   UI.mod_menu_mods_tabs(),
-                  G.EZ_MOD_MENU.mod_pager:ui(17, 9.3, UI.mod_box),
+                  pager:ui(17, 9.3, UI.mod_box),
                 },
               }),
             },

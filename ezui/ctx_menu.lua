@@ -56,7 +56,7 @@ function ctx_menu_def(rows)
         c = { colour = rows.config.border, emboss = 0.1, padding = 0.05, r = 0.1 },
         n = {
           Ezui.Row({
-            c = { minw = 3, minh = 1, colour = rows.config.bg, padding = 0.1, r = 0.1 },
+            c = { minw = 3, colour = rows.config.bg, padding = 0.1, r = 0.1 },
             n = nodes,
           }),
         },
@@ -78,8 +78,8 @@ local function ctx_menu(rows, at)
   local menu = UIBox({
     definition = ctx_menu_def(rows),
     config = {
-      align = major.T.y > G.ROOM.T.h / 2 and "tm" or "bm",
-      offset = { x = 0, y = major.T.y > G.ROOM.T.h / 2 and -0.1 or 0.1 },
+      align = major.T.y > G.ROOM.T.h * 0.7 and "tm" or "bm",
+      offset = { x = 0, y = major.T.y > G.ROOM.T.h * 0.7 and -0.1 or 0.1 },
       major = major,
     },
   })
