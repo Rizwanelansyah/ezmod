@@ -31,24 +31,24 @@ end
 function Pager:ui(width, height, fn)
   self.format_data = fn
 
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     n = {
-      Ezui.Row({
+      Ezmod.ui.Row({
         c = { align = "tm", minh = height or 7 },
         n = {
           { n = G.UIT.O, config = { object = self:data_preview(), id = "ezui_pager_data_preview" } },
         },
       }),
-      Ezui.Row({
+      Ezmod.ui.Row({
         n = {
-          Ezui.Col({
+          Ezmod.ui.Col({
             c = { align = "cm", minw = width or 10 },
             n = {
-              Ezui.Button("<", 0.5, G.C.RED, "ezui_pager_prev", function()
+              Ezmod.ui.Button("<", 0.5, G.C.RED, "ezui_pager_prev", function()
                 self:prev_page()
               end),
-              Ezui.Space(0.3),
-              Ezui.Button(nil, (width or 10) * 0.5, G.C.RED, "ezui_pager_location", function()
+              Ezmod.ui.Space(0.3),
+              Ezmod.ui.Button(nil, (width or 10) * 0.5, G.C.RED, "ezui_pager_location", function()
                 local rows = {}
                 for i = 1, self.max_page do
                   rows[#rows + 1] = {
@@ -58,10 +58,10 @@ function Pager:ui(width, height, fn)
                     end,
                   }
                 end
-                Ezui.CtxMenu(rows, G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_location"))
+                Ezmod.ui.CtxMenu(rows, G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_location"))
               end, { ref_table = self, text_field = "location_display" }),
-              Ezui.Space(0.3),
-              Ezui.Button(">", 0.5, G.C.RED, "ezui_pager_next", function()
+              Ezmod.ui.Space(0.3),
+              Ezmod.ui.Button(">", 0.5, G.C.RED, "ezui_pager_next", function()
                 self:next_page()
               end),
             },
@@ -133,10 +133,10 @@ function Pager:data_preview()
   end
 
   return UIBox({
-    definition = Ezui.Root({
+    definition = Ezmod.ui.Root({
       c = { colour = G.C.CLEAR },
       n = {
-        Ezui.Row({ c = { align = "cm", padding = 0.1 }, n = nodes }),
+        Ezmod.ui.Row({ c = { align = "cm", padding = 0.1 }, n = nodes }),
       },
     }),
     config = { parent = G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_data_preview") },

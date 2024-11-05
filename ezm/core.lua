@@ -1,5 +1,7 @@
 local lovely = require("lovely")
+unpack = unpack or table.unpack
 NFS = require("nativefs")
+JSON = require("json")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
 MODS = {}
 ALL_MODS = {}
@@ -13,11 +15,11 @@ Ezmod.modlist = { ezmod = true }
 
 package.path = package.path .. (Ezmod.path .. "/?.lua;") .. (Ezmod.path .. "/?/init.lua;")
 
-local util = require("ezm.util")
-local Mod = require("ezm.mod")
-
-Ezui = require("ezui")
-Ezutil = util
+Ezmod.http = require("ezm.http")
+Ezmod.util = require("ezm.util")
+Ezmod.Mod = require("ezm.mod")
+Ezmod.git = require("ezm.git")
+Ezmod.ui = require("ezui")
 
 local local_mods_listed = false
 function Ezmod.list_downloaded_mods()
@@ -57,7 +59,7 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
       local name = spec.name or mod_name
       local id = spec.id or string.lower(s):gsub("[^%w]+", "_")
       local prefix = spec.prefix or id
-      local version = util.parse_version(spec.version or { 0, 0, 1 })
+      local version = Ezmod.util.parse_version(spec.version or { 0, 0, 1 })
       local spec = {
         name = name,
         id = id,
@@ -74,8 +76,8 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
         downloaded = true,
       }
 
-      local mod = Mod(spec)
-      ALL_MODS[#ALL_MODS+1] = mod
+      local mod = Ezmod.Mod(spec)
+      ALL_MODS[#ALL_MODS + 1] = mod
       fn(mod)
     elseif deep_load then
       Ezmod.list_mods(path, fn, deep_load, reverse)
@@ -94,7 +96,7 @@ function Ezmod.boot()
   if not NFS.getInfo(Ezmod.data_path .. "/modlist.lua", "file") then
     NFS.write(Ezmod.data_path .. "/modlist.lua", "return {}")
   end
-  Ezmod.modlist = load(Ezutil.read_file(Ezmod.data_path .. "/modlist.lua"), "modlist", "bt")() or {}
+  Ezmod.modlist = load(Ezmod.util.read_file(Ezmod.data_path .. "/modlist.lua"), "modlist", "bt")() or {}
 
   boot_timer(nil, "Loading Assets", Ezmod.boot_progress)
   Ezmod.load_assets()
@@ -149,9 +151,9 @@ function Ezmod.check_mods_error()
         local container = G.OVERLAY_MENU:get_UIE_by_ID("ezm_mod_errors_container")
         container.config.object:remove()
         container.config.object = UIBox({
-          definition = Ezui.Root({
+          definition = Ezmod.ui.Root({
             c = { colour = G.C.CLEAR },
-            n = { Ezui.Pager(ERROR_MODS, 1):cycle():ui(7, 4, require("ezm.ui").error_description) },
+            n = { Ezmod.ui.Pager(ERROR_MODS, 1):cycle():ui(7, 4, require("ezm.ui").error_description) },
           }),
           config = { align = "cm", parent = container },
         })
@@ -168,7 +170,7 @@ function Ezmod.load_assets()
   G.ASSET_ATLAS.ezm_icons = {
     name = "ezm_icons",
     image = love.graphics.newImage(
-      Ezutil.new_file_data(Ezmod.path .. "/assets/" .. G.SETTINGS.GRAPHICS.texture_scaling .. "x/icons.png"),
+      Ezmod.util.new_file_data(Ezmod.path .. "/assets/" .. G.SETTINGS.GRAPHICS.texture_scaling .. "x/icons.png"),
       {
         mipmaps = true,
         dpiscale = G.SETTINGS.GRAPHICS.texture_scaling,
@@ -201,7 +203,6 @@ end
 function Ezmod.enable_mod(mod)
   if mod.id ~= "ezmod" then
     if version then
-      EZDBG(mod.version)
       Ezmod.modlist[mod.id] = mod.version
     else
       Ezmod.modlist[mod.id] = true

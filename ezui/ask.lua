@@ -5,28 +5,28 @@ local function ask_menu(question, options, fn)
   local button_width = (width / (#options + 1))
 
   for i, opt in ipairs(options) do
-    nodes[#nodes + 1] = Ezui.Button(opt.text, button_width, opt.colour, "ezui_ask_menu_option" .. i, function()
+    nodes[#nodes + 1] = Ezmod.ui.Button(opt.text, button_width, opt.colour, "ezui_ask_menu_option" .. i, function()
       fn(opt.value or opt.text)
       G.EZUI_ASK_MENU:remove()
       G.EZUI_ASK_MENU = nil
     end)
-    nodes[#nodes+1] = Ezui.Space(space)
+    nodes[#nodes+1] = Ezmod.ui.Space(space)
   end
 
-  return Ezui.DarkBGRoot({
-    Ezui.Col({
+  return Ezmod.ui.DarkBGRoot({
+    Ezmod.ui.Col({
       c = { colour = G.C.L_BLACK, padding = 0.1, r = 0.3, emboss = 0.2 },
       n = {
-        Ezui.Row({
+        Ezmod.ui.Row({
           c = { colour = G.C.WHITE, r = 0.2, padding = 0.4, emboss = 0.1, minw = width },
           n = {
-            Ezui.FmText(
+            Ezmod.ui.FmText(
               question,
               { t = { colour = G.C.GREY, scale = 0.4 }, c = { align = "cm", line_space = 0.2 }, v = { __opt = options } }
             ),
           },
         }),
-        Ezui.Row {
+        Ezmod.ui.Row {
           c = { align = "cm", padding = 0.05 },
           n = nodes
         }

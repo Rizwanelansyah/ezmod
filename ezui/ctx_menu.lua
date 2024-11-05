@@ -8,20 +8,20 @@ local function format_row(row, i, config)
   local nodes
   if type(row) == "string" then
     nodes = {
-      Ezui.Text({ text = row, colour = tc, scale = 0.3, force_no_shadow = true }),
+      Ezmod.ui.Text({ text = row, colour = tc, scale = 0.3, force_no_shadow = true }),
     }
   else
     nodes = {}
 
-    local icon = type(row.icon) == "string" and Ezui.Image(row.icon, 0.4, 0.4)
-      or (type(row.icon) == "table" and Ezui.Sprite(row.icon.atlas, 0.4, 0.4, row.icon.offset))
+    local icon = type(row.icon) == "string" and Ezmod.ui.Image(row.icon, 0.4, 0.4)
+      or (type(row.icon) == "table" and Ezmod.ui.Sprite(row.icon.atlas, 0.4, 0.4, row.icon.offset))
     if icon then
       nodes[#nodes + 1] = icon
       nodes[#nodes].config.align = "cl"
-      nodes[#nodes + 1] = Ezui.Space(0.1)
+      nodes[#nodes + 1] = Ezmod.ui.Space(0.1)
     end
 
-    nodes[#nodes + 1] = Ezui.Text({ text = row.text, colour = tc, scale = 0.3, force_no_shadow = true, hover = config.inverse_colour, hover_colour = config.inverse_colour and config.bg or nil })
+    nodes[#nodes + 1] = Ezmod.ui.Text({ text = row.text, colour = tc, scale = 0.3, force_no_shadow = true, hover = config.inverse_colour, hover_colour = config.inverse_colour and config.bg or nil })
   end
   local fn = row.fn or function() end
   local funcname = "ezui_ctx_menu_button" .. i .. "_on_click"
@@ -29,7 +29,7 @@ local function format_row(row, i, config)
     fn()
     close_ctx_menu()
   end
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     c = {
       padding = 0.1,
       r = 0.05,
@@ -49,13 +49,13 @@ function ctx_menu_def(rows)
   for i, row in ipairs(rows) do
     nodes[#nodes + 1] = format_row(row, i, rows.config)
   end
-  return Ezui.Root({
+  return Ezmod.ui.Root({
     c = { colour = G.C.CLEAR, padding = 0.1 },
     n = {
-      Ezui.Row({
+      Ezmod.ui.Row({
         c = { colour = rows.config.border, emboss = 0.1, padding = 0.05, r = 0.1 },
         n = {
-          Ezui.Row({
+          Ezmod.ui.Row({
             c = { minw = 3, colour = rows.config.bg, padding = 0.1, r = 0.1 },
             n = nodes,
           }),

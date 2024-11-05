@@ -28,7 +28,7 @@ function Mod:init(opt)
       self.deps[dep_or_version] = { ok = false }
     else
       self.deps[dep_id] = {
-        version = dep_or_version and Ezutil.parse_version_spec(dep_or_version),
+        version = dep_or_version and Ezmod.util.parse_version_spec(dep_or_version),
         ok = false,
       }
     end
@@ -57,24 +57,24 @@ function Mod:resolve()
       for _, mod in pairs(dep_mods) do
         if spec.version then
           if spec.version.upper then
-            if Ezutil.version_greater_equal(mod.version, spec.version.upper) then
+            if Ezmod.util.version_greater_equal(mod.version, spec.version.upper) then
               valid_mod = mod
               break
             end
           elseif spec.version.lower then
-            if Ezutil.version_less_equal(mod.version, spec.version.upper) then
+            if Ezmod.util.version_less_equal(mod.version, spec.version.upper) then
               valid_mod = mod
               break
             end
           elseif spec.version.exact then
-            if Ezutil.version_equal(mod.version, spec.version.upper) then
+            if Ezmod.util.version_equal(mod.version, spec.version.upper) then
               valid_mod = mod
               break
             end
           elseif spec.version.from and spec.version.to then
             if
-              Ezutil.version_greater_equal(mod.version, spec.version.from)
-              and Ezutil.version_less_equal(mod.version, spec.version.to)
+              Ezmod.util.version_greater_equal(mod.version, spec.version.from)
+              and Ezmod.util.version_less_equal(mod.version, spec.version.to)
             then
               valid_mod = mod
               break
@@ -119,7 +119,7 @@ function Mod:load()
   end
   self.loaded = true
   local loaded_mod = MODS[self.id]
-  if not loaded_mod or not Ezutil.version_equal(self.version, loaded_mod) then
+  if not loaded_mod or not Ezmod.util.version_equal(self.version, loaded_mod) then
     if loaded_mod then
       loaded_mod:unload()
     end
@@ -152,7 +152,7 @@ function Mod:icon_ui(w, h)
       local s = G.ANIMATION_ATLAS[key]
       if not s then
         local img = love.graphics.newImage(
-          Ezutil.new_file_data(self.path .. "/assets/" .. path),
+          Ezmod.util.new_file_data(self.path .. "/assets/" .. path),
           { mipmaps = true, dpiscale = 1 }
         )
         local data = {
@@ -173,7 +173,7 @@ function Mod:icon_ui(w, h)
       local s = G.ASSET_ATLAS[key]
       if not s then
         local img = love.graphics.newImage(
-          Ezutil.new_file_data(self.path .. "/assets/" .. path),
+          Ezmod.util.new_file_data(self.path .. "/assets/" .. path),
           { mipmaps = true, dpiscale = 1 }
         )
         local data = {
@@ -201,7 +201,7 @@ function Mod:icon_ui(w, h)
     end
   else
     -- Use rare joker tag sprite if didn't have an icon
-    return Ezui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
+    return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
   end
 end
 

@@ -317,7 +317,7 @@ function Ezui.Image(path, width, height)
   local key = "ezui_image:" .. path
   local s = G.ASSET_ATLAS[key]
   if not s then
-    local img = love.graphics.newImage(Ezutil.new_file_data(path), { mipmaps = true, dpiscale = 1 })
+    local img = love.graphics.newImage(Ezmod.util.new_file_data(path), { mipmaps = true, dpiscale = 1 })
     local data = {
       name = path,
       image = img,

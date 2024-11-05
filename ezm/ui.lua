@@ -58,7 +58,7 @@ function UI.mod_box(mod)
       "delete",
       G.C.RED,
       function()
-        Ezui.Ask(string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [::1.5]{'?'}", mod.name), {
+        Ezmod.ui.Ask(string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [::1.5]{'?'}", mod.name), {
           { text = "Yes", colour = G.C.RED },
           "No",
         })
@@ -84,12 +84,12 @@ function UI.mod_box(mod)
     "other",
     G.C.L_BLACK,
     function()
-      Ezui.CtxMenu(ctx_rows, G.OVERLAY_MENU:get_UIE_by_ID(base_id .. "_other_area"))
+      Ezmod.ui.CtxMenu(ctx_rows, G.OVERLAY_MENU:get_UIE_by_ID(base_id .. "_other_area"))
     end,
   }
 
   for i, btn in ipairs(_control_buttons) do
-    local button = Ezui.Button(
+    local button = Ezmod.ui.Button(
       btn[1],
       2,
       btn[3],
@@ -98,50 +98,50 @@ function UI.mod_box(mod)
       { scale = 0.3, ref_table = mod, icon = btn[5], icon_offset = btn[6] }
     )
     button.nodes[1].config.shadow = false
-    control_buttons[i] = Ezui.Row({
+    control_buttons[i] = Ezmod.ui.Row({
       c = { padding = 0.1 },
       n = {
-        Ezui.Stack({
-          Ezui.Box({ id = base_id .. "_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
+        Ezmod.ui.Stack({
+          Ezmod.ui.Box({ id = base_id .. "_" .. btn[2] .. "_area", w = 2, h = 0.3 }),
           button,
         }),
       },
     })
   end
 
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     c = { align = "cl", padding = 0.1, r = 0.1, emboss = 0.1, colour = G.C.WHITE },
     n = {
-      Ezui.Row({
+      Ezmod.ui.Row({
         n = {
-          Ezui.Col({ c = { padding = 0.2, align = "cm" }, n = { mod:icon_ui(1.5, 1.5) } }),
-          Ezui.Col({
+          Ezmod.ui.Col({ c = { padding = 0.2, align = "cm" }, n = { mod:icon_ui(1.5, 1.5) } }),
+          Ezmod.ui.Col({
             c = { padding = 0.1 },
             n = {
-              Ezui.Row({
+              Ezmod.ui.Row({
                 c = { align = "tl" },
                 n = {
-                  Ezui.Row({
+                  Ezmod.ui.Row({
                     c = { align = "bl" },
                     n = {
-                      Ezui.Stack({
-                        Ezui.Box({ h = 0.01, w = 8 }),
-                        Ezui.Row({
+                      Ezmod.ui.Stack({
+                        Ezmod.ui.Box({ h = 0.01, w = 8 }),
+                        Ezmod.ui.Row({
                           c = { align = "bl" },
                           n = {
-                            Ezui.DynText({
+                            Ezmod.ui.DynText({
                               string = mod.name,
                               colour = G.C.GREY,
                               scale = 0.4,
                               float = true,
                               shadow = true,
                             }),
-                            #mod.author == 1 and Ezui.Space(0.2) or nil,
+                            #mod.author == 1 and Ezmod.ui.Space(0.2) or nil,
                             #mod.author == 1
-                                and Ezui.Col({
+                                and Ezmod.ui.Col({
                                   c = { align = "lb" },
                                   n = {
-                                    Ezui.Text({
+                                    Ezmod.ui.Text({
                                       text = "by " .. mod.author[1],
                                       colour = G.C.UI.TEXT_INACTIVE,
                                       scale = 0.3,
@@ -152,16 +152,16 @@ function UI.mod_box(mod)
                           },
                         }),
                         mod.loaded
-                            and Ezui.Row({
+                            and Ezmod.ui.Row({
                               c = { align = "br" },
                               n = {
-                                Ezui.Text({
+                                Ezmod.ui.Text({
                                   text = "Loaded",
                                   colour = G.C.BLUE,
                                   scale = 0.3,
                                 }),
-                                Ezui.Space(0.2),
-                                Ezui.Text({
+                                Ezmod.ui.Space(0.2),
+                                Ezmod.ui.Text({
                                   text = "v" .. table.concat(mod.version, "."),
                                   colour = G.C.GREEN,
                                   scale = 0.3,
@@ -172,10 +172,10 @@ function UI.mod_box(mod)
                       }),
                     },
                   }),
-                  Ezui.Row({ n = { Ezui.Space(0, 0.05) } }),
-                  Ezui.Row({ n = { Ezui.Box({ h = 0.03, w = 8, colour = G.C.GREY }) } }),
-                  Ezui.Row({ n = { Ezui.Space(0, 0.1) } }),
-                  Ezui.FmText(mod.desc, {
+                  Ezmod.ui.Row({ n = { Ezmod.ui.Space(0, 0.05) } }),
+                  Ezmod.ui.Row({ n = { Ezmod.ui.Box({ h = 0.03, w = 8, colour = G.C.GREY }) } }),
+                  Ezmod.ui.Row({ n = { Ezmod.ui.Space(0, 0.1) } }),
+                  Ezmod.ui.FmText(mod.desc, {
                     t = { colour = G.C.GREY, scale = 0.3 },
                     c = { align = "cl", line_space = 0.05 },
                     v = { self = mod },
@@ -184,25 +184,25 @@ function UI.mod_box(mod)
               }),
             },
           }),
-          Ezui.Col({ n = { Ezui.Space(0.1) } }),
-          Ezui.Col({
+          Ezmod.ui.Col({ n = { Ezmod.ui.Space(0.1) } }),
+          Ezmod.ui.Col({
             c = { align = "cl" },
             n = control_buttons,
           }),
         },
       }),
 
-      Ezui.Row({
+      Ezmod.ui.Row({
         c = { minw = 0.3 },
         n = (function()
           local tags = {}
           for i, tag in ipairs(mod.tags or {}) do
             if i ~= 1 then
-              tags[#tags + 1] = Ezui.Col({ n = { Ezui.Space(0.1) } })
+              tags[#tags + 1] = Ezmod.ui.Col({ n = { Ezmod.ui.Space(0.1) } })
             end
-            tags[#tags + 1] = Ezui.Col({
+            tags[#tags + 1] = Ezmod.ui.Col({
               c = { padding = 0.1, r = 0.1, emboss = 0.05, colour = G.C.GREEN },
-              n = { Ezui.Text({ scale = 0.3, colour = G.C.WHITE, text = tag }) },
+              n = { Ezmod.ui.Text({ scale = 0.3, colour = G.C.WHITE, text = tag }) },
             })
           end
           return tags
@@ -217,10 +217,10 @@ function UI.error_description(error)
   local mod = error.mod
   local error_desc
   local function row(node, config)
-    return Ezui.Row({ c = config or { align = "cm" }, n = { node } })
+    return Ezmod.ui.Row({ c = config or { align = "cm" }, n = { node } })
   end
   if type == "duplicate" then
-    error_desc = Ezui.FmText({
+    error_desc = Ezmod.ui.FmText({
       "[G.C.ORANGE]{mod.name} and [G.C.ORANGE]{MODS[mod.id].name}",
       "have a same [G.C.WHITE:G.C.RED]{'ID'} which is [G.C.BLUE]{mod.id}.",
     }, { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "cm", line_space = 0.1 }, v = { mod = mod } })
@@ -270,51 +270,51 @@ function UI.error_description(error)
       end
     end
 
-    local formated = Ezui.FmText(
+    local formated = Ezmod.ui.FmText(
       text,
       { t = { colour = G.C.GREY, scale = 0.3 }, c = { align = "tl", line_space = 0.1 }, v = { mod = mod } }
     )
     formated.nodes[1].config = { align = "cm" }
     error_desc = row(formated, { padding = 0.1, align = "cm" })
   end
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08, minw = 7 },
     n = {
-      row(Ezui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }), { padding = 0.1, align = "sm" }),
-      row(Ezui.Box({ h = 0.03, w = 6, colour = G.C.GREY })),
+      row(Ezmod.ui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }), { padding = 0.1, align = "sm" }),
+      row(Ezmod.ui.Box({ h = 0.03, w = 6, colour = G.C.GREY })),
       error_desc,
     },
   })
 end
 
 function UI.error_mods()
-  return Ezui.DarkBGRoot({
-    Ezui.Row({
+  return Ezmod.ui.DarkBGRoot({
+    Ezmod.ui.Row({
       c = { align = "cm", r = 0.3, colour = G.C.WHITE, emboss = 0.1 },
       n = {
-        Ezui.Col({
+        Ezmod.ui.Col({
           c = { align = "cm", r = 0.2, padding = 0.01, colour = G.C.RED },
           n = {
-            Ezui.Row({
+            Ezmod.ui.Row({
               c = { align = "cm", padding = 0.1 },
               n = {
-                Ezui.Row({
+                Ezmod.ui.Row({
                   c = { align = "cm", padding = 0.2, r = 0.08, colour = G.C.WHITE, emboss = 0.03 },
                   n = {
-                    Ezui.Col({
+                    Ezmod.ui.Col({
                       c = { align = "cm", colour = G.C.RED, padding = 0.1, r = 0.3 },
                       n = {
-                        Ezui.Space(0.1),
-                        Ezui.Text({ text = "!", colour = G.C.WHITE, scale = 0.5 }),
-                        Ezui.Space(0.1),
+                        Ezmod.ui.Space(0.1),
+                        Ezmod.ui.Text({ text = "!", colour = G.C.WHITE, scale = 0.5 }),
+                        Ezmod.ui.Space(0.1),
                       },
                     }),
-                    Ezui.Space(0.3),
-                    Ezui.Text({ text = "Error Loading Mods!", colour = G.C.UI.TEXT_DARK, scale = 0.65 }),
-                    Ezui.Space(0.3),
+                    Ezmod.ui.Space(0.3),
+                    Ezmod.ui.Text({ text = "Error Loading Mods!", colour = G.C.UI.TEXT_DARK, scale = 0.65 }),
+                    Ezmod.ui.Space(0.3),
                   },
                 }),
-                Ezui.Row({
+                Ezmod.ui.Row({
                   c = { align = "cm", padding = 0.2, colour = G.C.L_BLACK, emboss = 0.05, r = 0.1, minw = 6, minh = 5 },
                   n = {
                     { n = G.UIT.O, config = { object = Moveable(), id = "ezm_mod_errors_container" } },
@@ -330,18 +330,18 @@ function UI.error_mods()
 end
 
 function UI.mod_menu()
-  return Ezui.DarkBGRoot({
-    Ezui.Row({
+  return Ezmod.ui.DarkBGRoot({
+    Ezmod.ui.Row({
       c = { id = "ez_mod_menu", align = "cm", r = 0.3, padding = 0.05, colour = G.C.WHITE, emboss = 0.1 },
       n = {
-        Ezui.Row({
+        Ezmod.ui.Row({
           c = { align = "cm", r = 0.25, padding = 0.3, colour = G.C.L_BLACK },
           n = {
-            Ezui.Col({
+            Ezmod.ui.Col({
               c = { minh = 11.5, align = "tm" },
               n = {
                 UI.mod_menu_tabs(),
-                Ezui.Col({ n = { Ezui.Space(0.1, 0.5) } }),
+                Ezmod.ui.Col({ n = { Ezmod.ui.Space(0.1, 0.5) } }),
                 { n = G.UIT.O, config = { id = "ez_mod_menu_view", object = Moveable() } },
               },
             }),
@@ -363,32 +363,32 @@ function UI.mod_menu_tabs()
 
   local nodes = {}
   for i, btn in ipairs(buttons) do
-    nodes[i] = Ezui.Button(btn[1], btn_width, G.C.EZM.TAB, "ez_mod_menu_tabs_" .. btn[2] .. "_button", function()
+    nodes[i] = Ezmod.ui.Button(btn[1], btn_width, G.C.EZM.TAB, "ez_mod_menu_tabs_" .. btn[2] .. "_button", function()
       G.FUNCS.mod_menu_switch_tab(btn[2])
     end, { scale = 0.6 })
   end
 
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     c = { id = "ez_mod_menu_tabs", align = "cm", padding = 0.1, colour = G.C.GREY, r = 0.1, minw = tabw },
     n = nodes,
   })
 end
 
 function UI.mod_menu_browser()
-  return Ezui.Root({
+  return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
-      Ezui.Col({
+      Ezmod.ui.Col({
         c = { align = "tm", padding = 0.1 },
         n = {
-          Ezui.Col({
+          Ezmod.ui.Col({
             c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
-              Ezui.Button("<", 0.5, G.C.RED, "ez_mod_menu_browser_back"),
-              Ezui.Space(0.1),
-              Ezui.Button("Refresh", 1.5, G.C.RED, "ez_mod_menu_browser_refresh"),
-              Ezui.Space(0.1),
-              Ezui.TextInput({
+              Ezmod.ui.Button("<", 0.5, G.C.RED, "ez_mod_menu_browser_back"),
+              Ezmod.ui.Space(0.1),
+              Ezmod.ui.Button("Refresh", 1.5, G.C.RED, "ez_mod_menu_browser_refresh"),
+              Ezmod.ui.Space(0.1),
+              Ezmod.ui.TextInput({
                 prompt_text = "Search...",
                 text_scale = 0.4,
                 max_length = 50,
@@ -406,22 +406,22 @@ function UI.mod_menu_browser()
 end
 
 function UI.mod_menu_mods()
-  local pager = G.EZ_MOD_MENU.mod_pager or Ezui.Pager(ALL_MODS, 3):cycle()
+  local pager = G.EZ_MOD_MENU.mod_pager or Ezmod.ui.Pager(ALL_MODS, 3):cycle()
   G.EZ_MOD_MENU.mod_pager = pager
   function pager.unique_id(mod)
     return mod.id
   end
 
-  return Ezui.Root({
+  return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
-      Ezui.Col({
+      Ezmod.ui.Col({
         c = { align = "tm", padding = 0.1 },
         n = {
-          Ezui.Col({
+          Ezmod.ui.Col({
             c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
-              Ezui.Row({
+              Ezmod.ui.Row({
                 n = {
                   UI.mod_menu_mods_tabs(),
                   pager:ui(17, 9.3, UI.mod_box),
@@ -445,7 +445,7 @@ function UI.mod_menu_mods_tabs()
 
   local nodes = {}
   for i, btn in ipairs(buttons) do
-    nodes[i] = Ezui.Button(
+    nodes[i] = Ezmod.ui.Button(
       btn[1],
       btn_width,
       G.C.EZM.MODS_TAB,
@@ -458,7 +458,7 @@ function UI.mod_menu_mods_tabs()
     nodes[i].nodes[1].config.shadow = false
   end
 
-  return Ezui.Row({
+  return Ezmod.ui.Row({
     c = { id = "ez_mod_menu_mods_tab", align = "cm", padding = 0.05, colour = G.C.CLEAR, minw = tabw },
     n = nodes,
   })
