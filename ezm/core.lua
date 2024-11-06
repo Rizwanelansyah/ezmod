@@ -28,9 +28,7 @@ function Ezmod.list_downloaded_mods()
   else
     local_mods_listed = true
     for _, mod_id in ipairs(NFS.getDirectoryItems(Ezmod.download_path)) do
-      Ezmod.list_mods(Ezmod.download_path .. "/" .. mod_id, function(mod)
-        ALL_MODS[#ALL_MODS + 1] = mod
-      end, false, true)
+      Ezmod.list_mods(Ezmod.download_path .. "/" .. mod_id, nil, false, true)
     end
   end
   return ALL_MODS
@@ -78,7 +76,9 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
 
       local mod = Ezmod.Mod(spec)
       ALL_MODS[#ALL_MODS + 1] = mod
-      fn(mod)
+      if fn then
+        fn(mod)
+      end
     elseif deep_load then
       Ezmod.list_mods(path, fn, deep_load, reverse)
     end

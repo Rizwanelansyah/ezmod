@@ -84,6 +84,28 @@ end
 """
 
 [[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "if not G.OVERLAY_MENU then"
+position = "at"
+match_indent = true
+payload = """
+if not G.OVERLAY_MENU and not G.EZUI_ASK_MENU then
+"""
+
+[[patches]]
+[patches.pattern]
+target = "engine/controller.lua"
+pattern = "elseif not G.OVERLAY_MENU.config.no_esc then"
+position = "before"
+match_indent = true
+payload = """
+elseif G.EZUI_ASK_MENU and G.EZUI_ASK_MENU.config.allow_cancel then
+  G.EZUI_ASK_MENU:remove()
+  G.EZUI_ASK_MENU = nil
+"""
+
+[[patches]]
 [patches.copy]
 target = "engine/controller.lua"
 position = "append"

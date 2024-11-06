@@ -88,6 +88,18 @@ function util.new_file_data(filepath)
   return love.filesystem.newFileData(util.read_file(filepath) or "", "")
 end
 
+function util.fs_remove(path)
+  local info = NFS.getInfo(path)
+  if info.type == "directory" then
+    local paths = NFS.getDirectoryItems(path)
+    for _, p in ipairs(paths) do
+      EZDBG(path .. "/" .. p)
+      util.fs_remove(path .. "/" .. p)
+    end
+  end
+  NFS.remove(path)
+end
+
 function EZDBG(...)
   local result = {}
   for i, v in ipairs({ ... }) do

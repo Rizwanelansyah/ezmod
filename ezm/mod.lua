@@ -135,7 +135,7 @@ function Mod:unload()
   if self.need_relog then
     --TODO: ask for relog baltro
   end
-  if MODS[self.id] then
+  if MODS[self.id] and Ezmod.util.version_equal(self.version, MODS[self.id].version) then
     MODS[self.id] = nil
   end
   self.loaded = false

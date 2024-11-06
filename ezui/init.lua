@@ -1,4 +1,4 @@
-local Ezui = {}
+local UI = {}
 
 local function strat(s, i)
   return string.sub(s, i, i)
@@ -14,12 +14,12 @@ local function eval(code, var)
   return f and f()
 end
 
-function Ezui.Root(opt)
+function UI.Root(opt)
   return { n = G.UIT.ROOT, config = opt.c, nodes = opt.n }
 end
 
-function Ezui.DarkBGRoot(nodes)
-  return Ezui.Root({
+function UI.DarkBGRoot(nodes)
+  return UI.Root({
     c = {
       align = "cm",
       minw = G.ROOM.T.w * 5,
@@ -32,30 +32,30 @@ function Ezui.DarkBGRoot(nodes)
   })
 end
 
-function Ezui.Row(opt)
+function UI.Row(opt)
   return { n = G.UIT.R, config = opt.c, nodes = opt.n }
 end
 
-function Ezui.Col(opt)
+function UI.Col(opt)
   return { n = G.UIT.C, config = opt.c, nodes = opt.n }
 end
 
-function Ezui.Text(opt)
+function UI.Text(opt)
   if type(opt) == "string" then
     opt = { text = opt }
   end
   return { n = G.UIT.T, config = opt }
 end
 
-function Ezui.Box(opt)
+function UI.Box(opt)
   return { n = G.UIT.B, config = opt }
 end
 
-function Ezui.Space(w, h)
-  return Ezui.Box({ w = w, h = h or 0.1 })
+function UI.Space(w, h)
+  return UI.Box({ w = w, h = h or 0.1 })
 end
 
-function Ezui.DynText(opt)
+function UI.DynText(opt)
   if type(opt) == "string" then
     opt = { string = opt }
   end
@@ -76,7 +76,7 @@ function parse_text(text, conf, var)
     local char = strat(text, i)
     if char == "[" then
       if cur then
-        result[#result + 1] = Ezui.Text({ text = cur, colour = conf.colour, scale = conf.scale })
+        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
       end
       cur = char
       i = i + 1
@@ -163,20 +163,20 @@ function parse_text(text, conf, var)
           if not has_bg then
             has_bg = true
           end
-          result[#result + 1] = Ezui.Col({
+          result[#result + 1] = UI.Col({
             c = { colour = bgcolor or conf.colour, padding = 0.05 * conf.scale * scale, align = "cm" },
             n = {
-              Ezui.Space(0.3 * conf.scale * scale),
-              Ezui.Text({
+              UI.Space(0.3 * conf.scale * scale),
+              UI.Text({
                 text = eval(val, var),
                 colour = fg and eval(fg, var) or conf.colour,
                 scale = conf.scale * scale,
               }),
-              Ezui.Space(0.3 * conf.scale * scale),
+              UI.Space(0.3 * conf.scale * scale),
             },
           })
         else
-          result[#result + 1] = Ezui.Text({
+          result[#result + 1] = UI.Text({
             text = eval(val, var),
             colour = fg and eval(fg, var) or conf.colour,
             scale = conf.scale * scale,
@@ -185,7 +185,7 @@ function parse_text(text, conf, var)
       end
     elseif char == "#" then
       if cur then
-        result[#result + 1] = Ezui.Text({ text = cur, colour = conf.colour, scale = conf.scale })
+        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
       end
       cur = nil
       i = i + 1
@@ -200,10 +200,10 @@ function parse_text(text, conf, var)
       if i <= len then
         i = i + 1
       end
-      result[#result + 1] = Ezui.Text({ text = eval(val, var), colour = conf.colour, scale = conf.scale })
+      result[#result + 1] = UI.Text({ text = eval(val, var), colour = conf.colour, scale = conf.scale })
     elseif char == "@" then
       if cur then
-        result[#result + 1] = Ezui.Text({ text = cur, colour = conf.colour, scale = conf.scale })
+        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
       end
       cur = char
       i = i + 1
@@ -247,12 +247,12 @@ function parse_text(text, conf, var)
     end
   end
   if cur then
-    result[#result + 1] = Ezui.Text({ text = cur, colour = conf.colour, scale = conf.scale })
+    result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
   end
   return result
 end
 
-function Ezui.FmText(lines, opt)
+function UI.FmText(lines, opt)
   opt = opt or {}
   opt.c = opt.c or {}
   opt.t = opt.t or {}
@@ -267,26 +267,26 @@ function Ezui.FmText(lines, opt)
   var.__opt = opt
   for i, line in ipairs(lines) do
     if opt.c.line_space and i ~= 1 then
-      parsed_lines[#parsed_lines + 1] = Ezui.Row({ n = { Ezui.Space(0.01, opt.c.line_space * (opt.t.scale or 1)) } })
+      parsed_lines[#parsed_lines + 1] = UI.Row({ n = { UI.Space(0.01, opt.c.line_space * (opt.t.scale or 1)) } })
     end
-    parsed_lines[#parsed_lines + 1] = Ezui.Row({
+    parsed_lines[#parsed_lines + 1] = UI.Row({
       n = {
-        Ezui.Col({ c = { align = "cm" }, n = parse_text(line, opt.t, var) }),
+        UI.Col({ c = { align = "cm" }, n = parse_text(line, opt.t, var) }),
       },
       c = opt.c,
     })
   end
-  return Ezui.Row({ c = opt.c, n = parsed_lines })
+  return UI.Row({ c = opt.c, n = parsed_lines })
 end
 
-function Ezui.TextInput(opt)
+function UI.TextInput(opt)
   if opt.colour then
     opt.hooked_colour = opt.hooked_colour or darken(copy_table(opt.colour), 0.3)
   end
   return create_text_input(opt)
 end
 
-function Ezui.Button(opt, width, colour, id, fn, alt_opt)
+function UI.Button(opt, width, colour, id, fn, alt_opt)
   if type(opt) == "table" then
     return UIBox_button(opt)
   else
@@ -313,7 +313,28 @@ function Ezui.Button(opt, width, colour, id, fn, alt_opt)
   end
 end
 
-function Ezui.Image(path, width, height)
+function UI.Toggle(opt, width, id, ref_table, ref_value, alt_opt)
+  if type(opt) == "table" then
+    return create_toggle(opt)
+  else
+    opt = {
+      id = id or string.lower(tostring(opt)):gsub("[^%d%w]+", "_"),
+      label = opt,
+      h = 0.4,
+      w = width,
+      col = true,
+      padding = 0.1,
+      ref_table = ref_table,
+      ref_value = ref_value,
+    }
+    for k, v in pairs(alt_opt or {}) do
+      opt[k] = v
+    end
+    return create_toggle(opt)
+  end
+end
+
+function UI.Image(path, width, height)
   local key = "ezui_image:" .. path
   local s = G.ASSET_ATLAS[key]
   if not s then
@@ -330,19 +351,19 @@ function Ezui.Image(path, width, height)
   return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[key]) } }
 end
 
-function Ezui.Sprite(name, width, height, offset)
+function UI.Sprite(name, width, height, offset)
   if type(name) == "table" then
     return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, name, offset) } }
   end
   return { n = G.UIT.O, config = { object = Sprite(0, 0, width, height, G.ASSET_ATLAS[name], offset) } }
 end
 
-function Ezui.Stack(nodes)
+function UI.Stack(nodes)
   return { n = G.UIT.STK, nodes = nodes }
 end
 
-Ezui.Ask = require("ezui.ask")
-Ezui.Pager = require("ezui.pager")
-Ezui.CtxMenu = require("ezui.ctx_menu")
+UI.Ask = require("ezui.ask")
+UI.Pager = require("ezui.pager")
+UI.CtxMenu = require("ezui.ctx_menu")
 
-return Ezui
+return UI

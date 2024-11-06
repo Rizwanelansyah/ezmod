@@ -26,8 +26,8 @@ local function format_row(row, i, config)
   local fn = row.fn or function() end
   local funcname = "ezui_ctx_menu_button" .. i .. "_on_click"
   G.FUNCS[funcname] = function()
-    fn()
     close_ctx_menu()
+    fn()
   end
   return Ezmod.ui.Row({
     c = {

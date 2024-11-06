@@ -58,10 +58,93 @@ function UI.mod_box(mod)
       "delete",
       G.C.RED,
       function()
-        Ezmod.ui.Ask(string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [::1.5]{'?'}", mod.name), {
-          { text = "Yes", colour = G.C.RED },
-          "No",
-        })
+        local mods = {}
+        for _, del_mod in ipairs(ALL_MODS) do
+          if del_mod.id == mod.id then
+            mods[#mods + 1] = del_mod
+          end
+        end
+        if #mods == 1 then
+          local del_mod = mods[1]
+          Ezmod.ui.Ask(
+            string.format(
+              "Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [G.C.GREEN]{'v%s'} [::1.5]{'?'}",
+              del_mod.name,
+              table.concat(del_mod.version, ".")
+            ),
+            {
+              config = { allow_cancel = true },
+
+              { text = "Yes", colour = G.C.RED },
+              { text = "No", colour = G.C.BLUE },
+            },
+            function(choice)
+              if choice == "Yes" then
+                del_mod:unload()
+                for i, mod in ipairs(ALL_MODS) do
+                  if mod == del_mod then
+                    table.remove(ALL_MODS, i)
+                    break
+                  end
+                end
+                NFS.remove(del_mod.path)
+                G.EZ_MOD_MENU.mod_pager:update()
+              end
+            end
+          )
+        else
+          local options = {
+            config = { allow_cancel = true, multi = true, pager = true },
+          }
+
+          for i, del_mod in ipairs(mods) do
+            options[#options + 1] = { text = "v" .. table.concat(del_mod.version, "."), value = i }
+          end
+
+          Ezmod.ui.Ask("Version(s) to [G.C.RED]{'delete'} [::1.4]{'?'}", options, function(choices)
+            local text = {
+              string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'}", mod.name),
+            }
+            local del_mods = {}
+            local first = true
+            for i, delete in pairs(choices) do
+              if delete then
+                if first then
+                  first = false
+                else
+                  text[#text] = text[#text] .. ","
+                end
+                text[#text + 1] = string.format("Version [G.C.GREEN]{'%s'}", table.concat(mods[i].version, "."))
+                del_mods[#del_mods + 1] = mods[i]
+              end
+            end
+            if not next(del_mods) then
+              return
+            end
+            if #del_mods > 1 then
+              text[#text] = "and " .. text[#text]
+            end
+            text[#text] = text[#text] .. "[::1.2]{'?'}"
+            Ezmod.ui.Ask(text, {
+              { text = "Yes", colour = G.C.RED },
+              { text = "No", colour = G.C.BLUE },
+            }, function(choice)
+              if choice == "Yes" then
+                for _, del_mod in ipairs(del_mods) do
+                  del_mod:unload()
+                  for i, mod in ipairs(ALL_MODS) do
+                    if mod == del_mod then
+                      table.remove(ALL_MODS, i)
+                      break
+                    end
+                  end
+                  Ezmod.util.fs_remove(del_mod.path)
+                end
+                G.EZ_MOD_MENU.mod_pager:update()
+              end
+            end)
+          end)
+        end
       end,
       icons,
       { x = 1, y = 0 },
@@ -280,7 +363,10 @@ function UI.error_description(error)
   return Ezmod.ui.Row({
     c = { align = "cm", padding = 0.05, r = 0.05, colour = G.C.WHITE, emboss = 0.08, minw = 7 },
     n = {
-      row(Ezmod.ui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }), { padding = 0.1, align = "sm" }),
+      row(
+        Ezmod.ui.Text({ text = "Missing Dependencies", colour = G.C.RED, scale = 0.4 }),
+        { padding = 0.1, align = "sm" }
+      ),
       row(Ezmod.ui.Box({ h = 0.03, w = 6, colour = G.C.GREY })),
       error_desc,
     },
