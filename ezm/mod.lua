@@ -10,8 +10,8 @@ function Mod:init(opt)
   self.downloaded = opt.downloaded
   self.loaded = false
   self.version = opt.version
-  self.git_ref = opt.git_ref or function ()
-    return "v" .. table.concat(self.version, '.')
+  self.git_ref = opt.git_ref or function()
+    return "v" .. table.concat(self.version, ".")
   end
   self.author = opt.author
   self.need_relog = opt.need_relog
@@ -113,12 +113,11 @@ function Mod:load()
   if self.loaded or self.has_error then
     return
   end
+
   if not Ezmod.boot_time then
     self:resolve()
   end
-  if not Ezmod.boot_time and self.need_relog then
-    --TODO: ask for relog balatro
-  end
+
   self.loaded = true
   local loaded_mod = MODS[self.id]
   if not loaded_mod or not Ezmod.util.version_equal(self.version, loaded_mod) then
@@ -128,17 +127,53 @@ function Mod:load()
     MODS[self.id] = self
   end
   --TODO: run mod files
+
+  if not Ezmod.boot_time and self.need_relog then
+    Ezmod.ui.Ask({
+      "[G.C.ORANGE]{mod.name} need relog [G.C.RED]{'Balatro'} to enable,",
+      "do you want to relog?",
+    }, {
+      config = { fmt_var = { mod = self } },
+
+      { text = "Yes, Relog", colour = G.C.RED, value = true },
+      { text = "No", colour = G.C.BLUE, value = false },
+    }, function(yes)
+      if yes then
+        Ezmod.relog_game()
+      end
+    end)
+    return
+  end
 end
 
 function Mod:unload()
   if not self.loaded then
     return
   end
-  if self.need_relog then
-    --TODO: ask for relog baltro
-  end
+
   if MODS[self.id] and Ezmod.util.version_equal(self.version, MODS[self.id].version) then
     MODS[self.id] = nil
+  end
+
+  if self.id == "ezmod" then
+    Ezmod.util.fs_move(Ezmod.path, Ezmod.data_path .. "/ezmod")
+  end
+
+  if self.need_relog then
+    Ezmod.ui.Ask({
+      "[G.C.ORANGE]{mod.name} need relog [G.C.RED]{'Balatro'} to disable,",
+      "do you want to relog?",
+    }, {
+      config = { fmt_var = { mod = self } },
+
+      { text = "Yes, Relog", colour = G.C.RED, value = true },
+      { text = "No", colour = G.C.BLUE, value = false },
+    }, function(yes)
+      if yes then
+        Ezmod.relog_game()
+      end
+    end)
+    return
   end
   self.loaded = false
   --TODO: unload mod (only work for EZ API only)
@@ -204,6 +239,12 @@ function Mod:icon_ui(w, h)
   else
     -- Use rare joker tag sprite if didn't have an icon
     return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
+  end
+end
+
+function Mod:download()
+  if self.downloaded then
+    return
   end
 end
 

@@ -59,6 +59,15 @@ match_indent = true
 payload = """
 self.last_time[key] = nil
 self.held_key_times[key] = nil
+
+if key == "tab" then
+  local menu = G.OVERLAY_MENU
+  local input = menu and (menu:get_UIE_by_ID('ezui_pager_search_bar') or menu:get_UIE_by_ID('ez_mod_menu_browser_search_bar'))
+  if input then
+    G.CONTROLLER.text_input_hook = input.children[1].children[1]
+    input.UIBox:recalculate()
+  end
+end
 """
 
 [[patches]]

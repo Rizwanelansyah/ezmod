@@ -1,6 +1,6 @@
-local UI = {}
+local UIDef = {}
 
-function UI.mod_box(mod)
+function UIDef.mod_box(mod)
   local control_buttons = {}
   local icons = G.ASSET_ATLAS.ezm_icons
   local base_id = "ez_mod_control_" .. mod.id .. "_v" .. (table.concat(mod.version, "_"))
@@ -58,93 +58,7 @@ function UI.mod_box(mod)
       "delete",
       G.C.RED,
       function()
-        local mods = {}
-        for _, del_mod in ipairs(ALL_MODS) do
-          if del_mod.id == mod.id then
-            mods[#mods + 1] = del_mod
-          end
-        end
-        if #mods == 1 then
-          local del_mod = mods[1]
-          Ezmod.ui.Ask(
-            string.format(
-              "Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [G.C.GREEN]{'v%s'} [::1.5]{'?'}",
-              del_mod.name,
-              table.concat(del_mod.version, ".")
-            ),
-            {
-              config = { allow_cancel = true },
-
-              { text = "Yes", colour = G.C.RED },
-              { text = "No", colour = G.C.BLUE },
-            },
-            function(choice)
-              if choice == "Yes" then
-                del_mod:unload()
-                for i, mod in ipairs(ALL_MODS) do
-                  if mod == del_mod then
-                    table.remove(ALL_MODS, i)
-                    break
-                  end
-                end
-                NFS.remove(del_mod.path)
-                G.EZ_MOD_MENU.mod_pager:update()
-              end
-            end
-          )
-        else
-          local options = {
-            config = { allow_cancel = true, multi = true, pager = true },
-          }
-
-          for i, del_mod in ipairs(mods) do
-            options[#options + 1] = { text = "v" .. table.concat(del_mod.version, "."), value = i }
-          end
-
-          Ezmod.ui.Ask("Version(s) to [G.C.RED]{'delete'} [::1.4]{'?'}", options, function(choices)
-            local text = {
-              string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'}", mod.name),
-            }
-            local del_mods = {}
-            local first = true
-            for i, delete in pairs(choices) do
-              if delete then
-                if first then
-                  first = false
-                else
-                  text[#text] = text[#text] .. ","
-                end
-                text[#text + 1] = string.format("Version [G.C.GREEN]{'%s'}", table.concat(mods[i].version, "."))
-                del_mods[#del_mods + 1] = mods[i]
-              end
-            end
-            if not next(del_mods) then
-              return
-            end
-            if #del_mods > 1 then
-              text[#text] = "and " .. text[#text]
-            end
-            text[#text] = text[#text] .. "[::1.2]{'?'}"
-            Ezmod.ui.Ask(text, {
-              { text = "Yes", colour = G.C.RED },
-              { text = "No", colour = G.C.BLUE },
-            }, function(choice)
-              if choice == "Yes" then
-                for _, del_mod in ipairs(del_mods) do
-                  del_mod:unload()
-                  for i, mod in ipairs(ALL_MODS) do
-                    if mod == del_mod then
-                      table.remove(ALL_MODS, i)
-                      break
-                    end
-                  end
-                  Ezmod.util.fs_remove(del_mod.path)
-                end
-                G.EZ_MOD_MENU.mod_pager:update()
-              end
-            end)
-          end)
-        end
+        Ezmod.delete_mod(mod)
       end,
       icons,
       { x = 1, y = 0 },
@@ -295,7 +209,7 @@ function UI.mod_box(mod)
   })
 end
 
-function UI.error_description(error)
+function UIDef.error_description(error)
   local type = error.type
   local mod = error.mod
   local error_desc
@@ -373,7 +287,7 @@ function UI.error_description(error)
   })
 end
 
-function UI.error_mods()
+function UIDef.error_mods()
   return Ezmod.ui.DarkBGRoot({
     Ezmod.ui.Row({
       c = { align = "cm", r = 0.3, colour = G.C.WHITE, emboss = 0.1 },
@@ -415,7 +329,7 @@ function UI.error_mods()
   })
 end
 
-function UI.mod_menu()
+function UIDef.mod_menu()
   return Ezmod.ui.DarkBGRoot({
     Ezmod.ui.Row({
       c = { id = "ez_mod_menu", align = "cm", r = 0.3, padding = 0.05, colour = G.C.WHITE, emboss = 0.1 },
@@ -426,7 +340,7 @@ function UI.mod_menu()
             Ezmod.ui.Col({
               c = { minh = 11.5, align = "tm" },
               n = {
-                UI.mod_menu_tabs(),
+                UIDef.mod_menu_tabs(),
                 Ezmod.ui.Col({ n = { Ezmod.ui.Space(0.1, 0.5) } }),
                 { n = G.UIT.O, config = { id = "ez_mod_menu_view", object = Moveable() } },
               },
@@ -438,7 +352,7 @@ function UI.mod_menu()
   })
 end
 
-function UI.mod_menu_tabs()
+function UIDef.mod_menu_tabs()
   local buttons = {
     { "Mods", "mods" },
     { "Browser", "browser" },
@@ -460,7 +374,7 @@ function UI.mod_menu_tabs()
   })
 end
 
-function UI.mod_menu_browser()
+function UIDef.mod_menu_browser()
   return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
@@ -475,6 +389,7 @@ function UI.mod_menu_browser()
               Ezmod.ui.Button("Refresh", 1.5, G.C.RED, "ez_mod_menu_browser_refresh"),
               Ezmod.ui.Space(0.1),
               Ezmod.ui.TextInput({
+                id = "ez_mod_menu_browser_search_bar",
                 prompt_text = "Search...",
                 text_scale = 0.4,
                 max_length = 50,
@@ -491,12 +406,33 @@ function UI.mod_menu_browser()
   })
 end
 
-function UI.mod_menu_mods()
-  local pager = G.EZ_MOD_MENU.mod_pager or Ezmod.ui.Pager(ALL_MODS, 3):cycle()
+function UIDef.mod_menu_mods()
+  Ezmod.list_downloaded_mods()
+  local pager = G.EZ_MOD_MENU.mod_pager
+    or Ezmod.ui.Pager(ALL_MODS, 3, {
+      cycle = true,
+      search = true,
+      filters = {
+        Loaded = function(mod)
+          return mod.loaded
+        end,
+        All = function()
+          return true
+        end,
+      },
+      default_filter = "Loaded",
+      unique_id = function(mod)
+        return mod.id
+      end,
+      on_duplicate = function (mod1, mod2)
+        local mod = mod1
+        if mod2.loaded then
+          mod = mod2
+        end
+        return mod
+      end
+    })
   G.EZ_MOD_MENU.mod_pager = pager
-  function pager.unique_id(mod)
-    return mod.id
-  end
 
   return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
@@ -505,14 +441,9 @@ function UI.mod_menu_mods()
         c = { align = "tm", padding = 0.1 },
         n = {
           Ezmod.ui.Col({
-            c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
+            c = { align = "cm", minw = 17 },
             n = {
-              Ezmod.ui.Row({
-                n = {
-                  UI.mod_menu_mods_tabs(),
-                  pager:ui(17, 9.3, UI.mod_box),
-                },
-              }),
+              pager:ui(17, 9.3, UIDef.mod_box),
             },
           }),
         },
@@ -521,33 +452,4 @@ function UI.mod_menu_mods()
   })
 end
 
-function UI.mod_menu_mods_tabs()
-  local buttons = {
-    { "Loaded", "loaded" },
-    { "All", "all" },
-  }
-  local tabw = 17
-  local btn_width = tabw / #buttons
-
-  local nodes = {}
-  for i, btn in ipairs(buttons) do
-    nodes[i] = Ezmod.ui.Button(
-      btn[1],
-      btn_width,
-      G.C.EZM.MODS_TAB,
-      "ez_mod_menu_mods_tabs_" .. btn[2] .. "_button",
-      function()
-        G.FUNCS.mod_menu_mods_switch_tab(btn[2])
-      end,
-      { scale = 0.4 }
-    )
-    nodes[i].nodes[1].config.shadow = false
-  end
-
-  return Ezmod.ui.Row({
-    c = { id = "ez_mod_menu_mods_tab", align = "cm", padding = 0.05, colour = G.C.CLEAR, minw = tabw },
-    n = nodes,
-  })
-end
-
-return UI
+return UIDef

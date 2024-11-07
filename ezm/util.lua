@@ -90,6 +90,7 @@ end
 
 function util.fs_remove(path)
   local info = NFS.getInfo(path)
+  if not info then return end
   if info.type == "directory" then
     local paths = NFS.getDirectoryItems(path)
     for _, p in ipairs(paths) do
@@ -130,6 +131,30 @@ function util.iter_archive(archive_content, base_path, fn)
       fn(p, content)
     end)
   end)
+end
+
+function util.fs_move(path, to)
+  local info = NFS.getInfo(path)
+  if not info then
+    return
+  end
+  if info.type == "directory" then
+    local to_info = NFS.getInfo(to)
+    if not to_info then
+      NFS.createDirectory(to)
+    end
+    for _, p in ipairs(NFS.getDirectoryItems(path)) do
+      util.fs_move(path .. "/" .. p, to .. "/" .. p)
+    end
+  else
+    local parent = string.gsub(to, "/?[^/]*/?$", "")
+    if parent ~= "" then
+      if not NFS.getInfo(parent) then
+        NFS.createDirectory(parent)
+      end
+    end
+    os.rename(path, to)
+  end
 end
 
 function EZDBG(...)

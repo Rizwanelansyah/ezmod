@@ -1,23 +1,38 @@
 local function ask_menu(question, options, fn, config)
   local nodes = {}
-  local width = 7
+  local width = config.width
   local space = 0.1
   local button_width = (width / (#options + 1))
 
   local choice
-  if config.multi then
+  if config.multiline then
     choice = function(opt)
-      local button = Ezmod.ui.Button(opt.text, width, opt.on and G.C.BLUE or G.C.GREY, "ezui_ask_menu_option" .. opt.i, function(e)
-        local value = opt.value or opt.text
-        local choices = G.EZUI_ASK_MENU.config.choices
-        choices[value] = not choices[value]
-        opt.on = choices[value]
-        if choices[value] then
-          e.config.colour = G.C.BLUE
-        else
-          e.config.colour = G.C.GREY
+      local button = Ezmod.ui.Button(
+        opt.text,
+        width,
+        opt.on and G.C.BLUE or G.C.GREY,
+        "ezui_ask_menu_option" .. opt.i,
+        function(e)
+          if config.multi then
+            local value = opt.value
+            if value == nil then
+               value = opt.text
+            end
+            local choices = G.EZUI_ASK_MENU.config.choices
+            choices[value] = not choices[value]
+            opt.on = choices[value]
+            if choices[value] then
+              e.config.colour = G.C.BLUE
+            else
+              e.config.colour = G.C.GREY
+            end
+          else
+            G.EZUI_ASK_MENU:remove()
+            G.EZUI_ASK_MENU = nil
+            fn(opt.value or opt.text)
+          end
         end
-      end)
+      )
 
       button.nodes[1].config.shadow = false
       button.nodes[1].config.emboss = 0.05
@@ -41,10 +56,17 @@ local function ask_menu(question, options, fn, config)
   for i, opt in ipairs(options) do
     opt.i = i
     nodes[#nodes + 1] = choice(opt)
-    if config.multi then
+    if config.multiline then
       nodes[#nodes + 1] = Ezmod.ui.Row({ n = { Ezmod.ui.Space(0, space) } })
     else
       nodes[#nodes + 1] = Ezmod.ui.Space(space)
+    end
+  end
+
+  local fmt_var = { __opt = options }
+  if config.fmt_var then
+    for key, value in pairs(config.fmt_var) do
+      fmt_var[key] = value
     end
   end
 
@@ -58,7 +80,7 @@ local function ask_menu(question, options, fn, config)
             Ezmod.ui.FmText(question, {
               t = { colour = G.C.GREY, scale = 0.4 },
               c = { align = "cm", minw = width, line_space = 0.2 },
-              v = { __opt = options },
+              v = fmt_var,
             }),
           },
         }),
@@ -85,6 +107,10 @@ end
 local function ask(question, options, fn)
   question = question or {}
   local config = options.config or {}
+  config.width = config.width or 7
+  if config.multiline == nil then
+    config.multiline = config.multi
+  end
   options = options or {}
   if type(question) == "string" then
     local question_t = {}
@@ -105,6 +131,7 @@ local function ask(question, options, fn)
     G.EZUI_ASK_MENU = nil
   end
 
+  G.CONTROLLER.text_input_hook = nil
   local menu = UIBox({
     definition = ask_menu(question, options, fn or function() end, config),
     config = {

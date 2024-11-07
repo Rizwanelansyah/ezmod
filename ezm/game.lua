@@ -34,9 +34,7 @@ function Game:set_ezm_globals()
   self.EZ_MOD_MENU = {
     current_tab = "mods",
     search = "",
-    mods_current_tab = "loaded",
     mod_pager = nil,
-    listed_mods = {},
-    setting_path = "main",
+    setting_loc = { "main" },
   }
 end

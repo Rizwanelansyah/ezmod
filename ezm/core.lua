@@ -18,7 +18,7 @@ Ezmod.http = require("ezm.http")
 Ezmod.util = require("ezm.util")
 Ezmod.Mod = require("ezm.mod")
 Ezmod.git = require("ezm.git")
-Ezmod.ui = require("ezui")
+Ezmod.ui = require("ezm.ui")
 
 local local_mods_listed = false
 function Ezmod.list_downloaded_mods()
@@ -146,7 +146,7 @@ function Ezmod.check_mods_error()
       func = function()
         G.SETTINGS.paused = true
         G.FUNCS.overlay_menu({
-          definition = require("ezm.ui").error_mods(),
+          definition = require("ezm.uidef").error_mods(),
         })
 
         local container = G.OVERLAY_MENU:get_UIE_by_ID("ezm_mod_errors_container")
@@ -154,7 +154,7 @@ function Ezmod.check_mods_error()
         container.config.object = UIBox({
           definition = Ezmod.ui.Root({
             c = { colour = G.C.CLEAR },
-            n = { Ezmod.ui.Pager(ERROR_MODS, 1):cycle():ui(7, 4, require("ezm.ui").error_description) },
+            n = { Ezmod.ui.Pager(ERROR_MODS, 1, { cycle = true }):ui(7, 4, require("ezm.ui").error_description) },
           }),
           config = { align = "cm", parent = container },
         })
@@ -201,7 +201,7 @@ function Ezmod.save_modlist()
   NFS.write(Ezmod.data_path .. "/modlist.lua", code)
 end
 
-function Ezmod.enable_mod(mod)
+function Ezmod._enable_mod(mod)
   if mod.id ~= "ezmod" then
     if version then
       Ezmod.modlist[mod.id] = mod.version
@@ -216,8 +216,33 @@ function Ezmod.enable_mod(mod)
   end
 end
 
+function Ezmod.enable_mod(mod)
+  local mods = {}
+  for _, del_mod in ipairs(ALL_MODS) do
+    if del_mod.id == mod.id then
+      mods[#mods + 1] = del_mod
+    end
+  end
+  if #mods == 1 then
+    Ezmod._enable_mod(mods[1])
+  else
+    local options = {
+      config = { allow_cancel = true, multiline = true },
+    }
+
+    for i, del_mod in ipairs(mods) do
+      options[#options + 1] = { text = "v" .. table.concat(del_mod.version, "."), value = i }
+    end
+
+    Ezmod.ui.Ask("Version to [G.C.GREEN]{'enable'} [::1.4]{'?'}", options, function(choice)
+      Ezmod._enable_mod(mods[choice])
+    end)
+  end
+end
+
 function Ezmod.disable_mod(mod)
-  if id ~= "ezmod" then
+  if mod.id == "ezmod" then
+  else
     if Ezmod.modlist[mod.id] then
       Ezmod.modlist[mod.id] = nil
       Ezmod.save_modlist()
@@ -227,6 +252,116 @@ function Ezmod.disable_mod(mod)
   if G.EZ_MOD_MENU.mod_pager then
     G.EZ_MOD_MENU.mod_pager:update()
   end
+end
+
+function Ezmod.delete_mod(mod)
+  local mods = {}
+  for _, del_mod in ipairs(ALL_MODS) do
+    if del_mod.id == mod.id then
+      mods[#mods + 1] = del_mod
+    end
+  end
+  if #mods == 1 then
+    local del_mod = mods[1]
+    Ezmod.ui.Ask(
+      string.format(
+        "Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'} [G.C.GREEN]{'v%s'} [::1.5]{'?'}",
+        del_mod.name,
+        table.concat(del_mod.version, ".")
+      ),
+      {
+        config = { allow_cancel = true },
+
+        { text = "Yes", colour = G.C.RED },
+        { text = "No", colour = G.C.BLUE },
+      },
+      function(choice)
+        if choice == "Yes" then
+          Ezmod.util.fs_remove(del_mod.path)
+          Ezmod.disable_mod(del_mod)
+          for i, mod in ipairs(ALL_MODS) do
+            if mod == del_mod then
+              table.remove(ALL_MODS, i)
+              break
+            end
+          end
+          if not next(NFS.getDirectoryItems(Ezmod.download_path .. "/" .. mod.id)) then
+            Ezmod.util.fs_remove(Ezmod.download_path .. "/" .. mod.id)
+          end
+          G.EZ_MOD_MENU.mod_pager:update()
+        end
+      end
+    )
+  else
+    local options = {
+      config = { allow_cancel = true, multi = true, pager = true },
+    }
+
+    for i, del_mod in ipairs(mods) do
+      options[#options + 1] = { text = "v" .. table.concat(del_mod.version, "."), value = i }
+    end
+
+    Ezmod.ui.Ask("Version(s) to [G.C.RED]{'delete'} [::1.4]{'?'}", options, function(choices)
+      local text = {
+        string.format("Do you really wanna [G.C.RED]{'delete'} [G.C.ORANGE]{'%s'}", mod.name),
+      }
+      local del_mods = {}
+      local first = true
+      for i, delete in pairs(choices) do
+        if delete then
+          if first then
+            first = false
+          else
+            text[#text] = text[#text] .. ","
+          end
+          text[#text + 1] = string.format("Version [G.C.GREEN]{'%s'}", table.concat(mods[i].version, "."))
+          del_mods[#del_mods + 1] = mods[i]
+        end
+      end
+      if not next(del_mods) then
+        return
+      end
+      if #del_mods > 1 then
+        text[#text] = "and " .. text[#text]
+      end
+      text[#text] = text[#text] .. "[::1.2]{'?'}"
+      Ezmod.ui.Ask(text, {
+        { text = "Yes", colour = G.C.RED },
+        { text = "No", colour = G.C.BLUE },
+      }, function(choice)
+        if choice == "Yes" then
+          for _, del_mod in ipairs(del_mods) do
+            Ezmod.disable_mod(del_mod)
+            for i, mod in ipairs(ALL_MODS) do
+              if mod == del_mod then
+                table.remove(ALL_MODS, i)
+                break
+              end
+            end
+            Ezmod.util.fs_remove(del_mod.path)
+          end
+          if not next(NFS.getDirectoryItems(Ezmod.download_path .. "/" .. mod.id)) then
+            Ezmod.util.fs_remove(Ezmod.download_path .. "/" .. mod.id)
+          end
+          G.EZ_MOD_MENU.mod_pager:update()
+        end
+      end)
+    end)
+  end
+end
+
+function Ezmod.relog_game()
+  if love.system.getOS() == "OS X" then
+    os.execute('sh "/Users/$USER/Library/Application Support/Steam/steamapps/common/Balatro/run_lovely.sh" &')
+  else
+    love.thread
+      .newThread([[
+      os.execute(...)
+    ]])
+      :start(string.format('"%s" %s', arg[-2], table.concat(arg, " ")))
+  end
+
+  love.event.quit()
 end
 
 require("ezm.funcs")

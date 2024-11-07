@@ -283,7 +283,9 @@ function UI.TextInput(opt)
   if opt.colour then
     opt.hooked_colour = opt.hooked_colour or darken(copy_table(opt.colour), 0.3)
   end
-  return create_text_input(opt)
+  local input = create_text_input(opt)
+  input.nodes[1].config.id = opt.id
+  return input
 end
 
 function UI.Button(opt, width, colour, id, fn, alt_opt)
@@ -362,8 +364,8 @@ function UI.Stack(nodes)
   return { n = G.UIT.STK, nodes = nodes }
 end
 
-UI.Ask = require("ezui.ask")
-UI.Pager = require("ezui.pager")
-UI.CtxMenu = require("ezui.ctx_menu")
+UI.Ask = require("ezm.ui.ask")
+UI.Pager = require("ezm.ui.pager")
+UI.CtxMenu = require("ezm.ui.ctx_menu")
 
 return UI
