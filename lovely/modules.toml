@@ -7,9 +7,3 @@ priority = 0
 source = "nativefs.lua"
 before = "main.lua"
 name = "nativefs"
-
-[[patches]]
-[patches.module]
-source = "json.lua"
-before = "main.lua"
-name = "json"

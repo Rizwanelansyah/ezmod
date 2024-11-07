@@ -40,7 +40,7 @@ local http = {}
 
 function http.get(url, data, header, handle_fn)
   url = url .. (data and ("?" .. url_encode(data)) or "")
-  local req = { "GET", url, nil, header or {} }
+  local req = { "GET", url, nil, header }
   if handle_fn then
     req[5] = handle_id
     G.EZM_HTTP_HANDLERS[handle_id] = handle_fn

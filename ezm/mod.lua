@@ -10,7 +10,9 @@ function Mod:init(opt)
   self.downloaded = opt.downloaded
   self.loaded = false
   self.version = opt.version
-  self.git_tag = opt.git_tag
+  self.git_ref = opt.git_ref or function ()
+    return "v" .. table.concat(self.version, '.')
+  end
   self.author = opt.author
   self.need_relog = opt.need_relog
   self.has_error = false

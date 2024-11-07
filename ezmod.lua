@@ -2,7 +2,6 @@ name = "EZ Mod Loader"
 id = "ezmod"
 icon = "icon.jpg"
 version = "0.0.1"
-git_tag = VFMT("v%s")
 author = "Rizwanelansyah"
 need_relog = true
 tags = {

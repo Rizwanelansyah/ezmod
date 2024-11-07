@@ -1,7 +1,6 @@
 local lovely = require("lovely")
 unpack = unpack or table.unpack
 NFS = require("nativefs")
-JSON = require("json")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
 MODS = {}
 ALL_MODS = {}
@@ -69,7 +68,9 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
         icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
         path = path,
         author = type(spec.author) == "string" and { spec.author } or (spec.author or {}),
-        git_tag = spec.git_tag,
+        git_ref = spec.git_ref and (type(spec.git_ref) == "string" and function()
+          return spec.git_ref
+        end or spec.git_ref) or nil,
         need_relog = spec.need_relog,
         downloaded = true,
       }

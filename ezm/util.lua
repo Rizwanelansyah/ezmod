@@ -93,11 +93,43 @@ function util.fs_remove(path)
   if info.type == "directory" then
     local paths = NFS.getDirectoryItems(path)
     for _, p in ipairs(paths) do
-      EZDBG(path .. "/" .. p)
       util.fs_remove(path .. "/" .. p)
     end
   end
   NFS.remove(path)
+end
+
+function util.mount(archive_content, fn)
+  local mount_point = "ezm-tmp-mountpoint"
+  local zip_name = mount_point .. ".zip"
+  love.filesystem.mount(love.filesystem.newFileData(archive_content, zip_name), mount_point)
+  fn(mount_point)
+  love.filesystem.unmount(zip_name)
+end
+
+local function iter_files(path, fn)
+  local info = love.filesystem.getInfo(path)
+  if not info then
+    return
+  end
+  if info.type == "directory" then
+    for _, p in ipairs(love.filesystem.getDirectoryItems(path)) do
+      iter_files(path .. "/" .. p, fn)
+    end
+  else
+    fn(path)
+  end
+end
+
+function util.iter_archive(archive_content, base_path, fn)
+  util.mount(archive_content, function(mp)
+    local path = mp .. "/" .. base_path
+    iter_files(path, function(p)
+      local content = love.filesystem.read(p)
+      p = string.sub(p, #path + 2, -1)
+      fn(p, content)
+    end)
+  end)
 end
 
 function EZDBG(...)
