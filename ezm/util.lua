@@ -172,12 +172,12 @@ function util.fuzzy_search(s, substr)
   local i = 1
   while i <= len do
     if char == sub_char then
-      match[#match+1] = i
+      match[#match + 1] = i
       sub_i = sub_i + 1
       sub_char = util.strat(substr, sub_i)
 
       if #match == sublen then
-        matches[#matches+1] = match
+        matches[#matches + 1] = match
         match = {}
 
         sub_i = 1
@@ -307,9 +307,20 @@ function util.parse_fmtext(text, conf, var)
           if not has_bg then
             has_bg = true
           end
-          result[#result + 1] = { type = "textbox", bg = bgcolor, fg = fg and util.eval(fg, var) or conf.colour, scale = conf.scale * scale, text = util.eval(val, var) }
+          result[#result + 1] = {
+            type = "textbox",
+            bg = bgcolor,
+            fg = fg and util.eval(fg, var) or conf.colour,
+            scale = conf.scale * scale,
+            text = util.eval(val, var),
+          }
         else
-          result[#result + 1] = { type = "colored", colour = fg and util.eval(fg, var) or conf.colour, scale = conf.scale * scale, text = util.eval(val, var) }
+          result[#result + 1] = {
+            type = "colored",
+            colour = fg and util.eval(fg, var) or conf.colour,
+            scale = conf.scale * scale,
+            text = util.eval(val, var),
+          }
         end
       end
     elseif char == "#" then
@@ -415,6 +426,19 @@ function util.read_fmtext(lines, opt)
     text = text .. read_fmtext(line, opt.t, var)
   end
   return text
+end
+
+function util.has_connection()
+  local socket = require("socket")
+  local test_conn = socket.tcp()
+  test_conn:settimeout(1000)
+  local result = test_conn:connect("www.google.com", 80)
+  test_conn:close()
+  if result == nil then
+    return false
+  else
+    return true
+  end
 end
 
 function EZDBG(...)

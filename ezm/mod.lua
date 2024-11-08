@@ -10,6 +10,7 @@ function Mod:init(opt)
   self.downloaded = opt.downloaded
   self.loaded = false
   self.version = opt.version
+  self.files = opt.files
   self.git_ref = opt.git_ref or function()
     return "v" .. table.concat(self.version, ".")
   end
@@ -128,9 +129,10 @@ function Mod:load()
   end
 
   if self.id == "ezmod" then
-    local info = NFS.getInfo(Ezmod.data_path .. "/ezmod")
+    local path = Ezmod.data_path .. "/versions/" .. table.concat(self.version, ".")
+    local info = NFS.getInfo(path)
     if info and info.type == "directory" then
-      Ezmod.util.fs_move(Ezmod.data_path .. "/ezmod", MODS_PATH .. "/ezmod")
+      Ezmod.util.fs_move(path, MODS_PATH .. "/ezmod")
     end
   end
 
@@ -143,10 +145,10 @@ function Mod:load()
     }, {
       config = { fmt_var = { mod = self } },
 
-      { text = "Yes, Relog", colour = G.C.RED, value = 'y' },
-      { text = "No", colour = G.C.BLUE, value = 'n' },
+      { text = "Yes, Relog", colour = G.C.RED, value = "y" },
+      { text = "No", colour = G.C.BLUE, value = "n" },
     }, function(answer)
-      if answer == 'y' then
+      if answer == "y" then
         Ezmod.relog_game()
       end
     end)
@@ -163,7 +165,7 @@ function Mod:unload()
   end
 
   if self.id == "ezmod" then
-    Ezmod.util.fs_move(Ezmod.path, Ezmod.data_path .. "/ezmod")
+    Ezmod.util.fs_move(Ezmod.path, Ezmod.data_path .. "/versions/" .. table.concat(self.version, "."))
   end
 
   if self.need_relog then
@@ -173,10 +175,10 @@ function Mod:unload()
     }, {
       config = { fmt_var = { mod = self } },
 
-      { text = "Yes, Relog", colour = G.C.RED, value = 'y' },
-      { text = "No", colour = G.C.BLUE, value = 'n' },
+      { text = "Yes, Relog", colour = G.C.RED, value = "y" },
+      { text = "No", colour = G.C.BLUE, value = "n" },
     }, function(answer)
-      if answer == 'y' then
+      if answer == "y" then
         Ezmod.relog_game()
       end
     end)
@@ -187,11 +189,11 @@ end
 
 function Mod:icon_ui(w, h)
   if self.icon then
-    if self.icon[1] == "animated" then
+    if self.icon[1] == "animated" and self.downloaded then
       local path = self.icon[2]
       local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
-      local frames = self.icon[4]
-      local key = "ezmod_" .. self.id .. "_animated_icon:" .. path
+      local frames = self.icon[4] or 1
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_animated_icon:" .. path
       local s = G.ANIMATION_ATLAS[key]
       if not s then
         local img = love.graphics.newImage(
@@ -210,9 +212,9 @@ function Mod:icon_ui(w, h)
       end
 
       return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s) } }
-    elseif self.icon[1] == "image" then
+    elseif self.icon[1] == "image" and self.downloaded then
       local path = self.icon[2]
-      local key = "ezmod_" .. self.id .. "_icon:" .. path
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_icon:" .. path
       local s = G.ASSET_ATLAS[key]
       if not s then
         local img = love.graphics.newImage(
@@ -241,17 +243,51 @@ function Mod:icon_ui(w, h)
         n = G.UIT.O,
         config = { object = AnimatedSprite(0, 0, w or 1, h or 1, G.ANIMATION_ATLAS[self.icon[2]], offset) },
       }
-    end
-  else
-    -- Use rare joker tag sprite if didn't have an icon
-    return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
-  end
-end
+    elseif self.icon[1] == "file_data:image" then
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_icon"
+      local s = G.ASSET_ATLAS[key]
+      if not s then
+        local img = love.graphics.newImage(
+          love.graphics.newFileData(self.icon[2], ""),
+          { mipmaps = true, dpiscale = 1 }
+        )
+        local data = {
+          name = key,
+          image = img,
+          px = img:getWidth(),
+          py = img:getHeight(),
+        }
+        G.ASSET_ATLAS[key] = data
+        s = data
+      end
+      return { n = G.UIT.O, config = { object = Sprite(0, 0, w or 1, h or 1, s) } }
+    elseif self.icon[1] == "file_data:animated" then
+      local path = self.icon[2]
+      local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
+      local frames = self.icon[4] or 1
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_animated_icon"
+      local s = G.ANIMATION_ATLAS[key]
+      if not s then
+        local img = love.graphics.newImage(
+          Ezmod.util.new_file_data(love.graphics.newFileData(self.icon[2], "")),
+          { mipmaps = true, dpiscale = 1 }
+        )
+        local data = {
+          name = path,
+          image = img,
+          px = size[1],
+          py = size[2],
+          frames = frames,
+        }
+        G.ANIMATION_ATLAS[key] = data
+        s = data
+      end
 
-function Mod:download()
-  if self.downloaded then
-    return
+      return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s) } }
+    end
   end
+  -- Use rare joker tag sprite if didn't have an icon
+  return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
 end
 
 return Mod

@@ -31,7 +31,7 @@ function G.FUNCS.mod_menu_switch_tab(name)
   mod_menu_view.config.object = object
 
   if name == "browser" then
-    local search_bar = G.OVERLAY_MENU:get_UIE_by_ID("ez_mod_menu_browser_search_bar")
+    local search_bar = G.OVERLAY_MENU:get_UIE_by_ID("ezui_pager_search_bar")
     if search_bar then
       G.CONTROLLER.text_input_hook = search_bar.children[1].children[1]
     end

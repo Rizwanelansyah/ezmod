@@ -8,9 +8,9 @@ function Repo:init(user, repo, ref)
 end
 
 function Repo:download(download_to, after)
-  Ezmod.http.get(string.format("https://codeload.github.com/%s/%s/zip/refs/heads/%s", self.user, self.repo, self.ref), nil, nil, function (status, body)
-    if status == 200 then
-      Ezmod.util.iter_archive(body, self.repo .. '-' .. self.ref, function (path, content)
+  Ezmod.curl.get(string.format("https://codeload.github.com/%s/%s/zip/refs/heads/%s", self.user, self.repo, self.ref), nil, function (res)
+    if res.status == 200 then
+      Ezmod.util.iter_archive(res.body, self.repo .. '-' .. self.ref, function (path, content)
         local dir = string.gsub(path, "/?[^/]*/?$", "")
         if dir ~= "" then
           NFS.createDirectory(download_to .. "/" .. dir)
@@ -18,14 +18,14 @@ function Repo:download(download_to, after)
         NFS.write(download_to .. '/' .. path, content)
       end)
     end
-    if after then after(status == 200) end
+    if after then after(res.status == 200) end
   end)
 end
 
 function Repo:read_file(path, fn)
-  Ezmod.http.get(string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", self.user, self.repo, self.ref, path), nil, nil, function (status, body)
+  Ezmod.curl.get(string.format("https://raw.githubusercontent.com/%s/%s/%s/%s", self.user, self.repo, self.ref, path), nil, function (res)
     if fn then
-      fn(status == 200, body)
+      fn(res.status == 200, res.body)
     end
   end)
 end

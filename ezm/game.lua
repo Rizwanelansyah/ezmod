@@ -2,11 +2,14 @@ local game_update = Game.update
 function Game:update(...)
   game_update(self, ...)
 
-  local has_response, status_code, body, header, handle_id = Ezmod.http.poll_response()
-  if has_response and handle_id and G.EZM_HTTP_HANDLERS[handle_id] then
-    local handle = G.EZM_HTTP_HANDLERS[handle_id]
-    handle(status_code, body, header)
-    G.EZM_HTTP_HANDLERS[handle_id] = nil
+  local has_response, res = Ezmod.curl.poll_response()
+  if has_response and res and res.dbg then
+    EZDBG(res.v)
+  end
+  if has_response and res and res.handle_id and G.EZM_CURL_HANDLERS[res.handle_id] then
+    local handle = G.EZM_CURL_HANDLERS[res.handle_id]
+    handle(res)
+    G.EZM_CURL_HANDLERS[res.handle_id] = nil
   end
 
   Ezmod.check_mods_error()
@@ -30,11 +33,12 @@ function Game:set_ezm_globals()
     TAB_SELECTED = copy_table(self.C.BLUE),
     MODS_TAB = copy_table(self.C.GREY),
   }
-  self.EZM_HTTP_HANDLERS = {}
+  self.EZM_CURL_HANDLERS = {}
   self.EZ_MOD_MENU = {
     current_tab = "mods",
     search = "",
     mod_pager = nil,
+    browser_pager = nil,
     setting_loc = { "main" },
   }
 end

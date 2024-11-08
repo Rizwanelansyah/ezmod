@@ -375,6 +375,48 @@ function UIDef.mod_menu_tabs()
 end
 
 function UIDef.mod_menu_browser()
+  G.EZ_MOD_MENU.browser_pager = G.EZ_MOD_MENU.browser_pager
+    or Ezmod.ui.Pager(BROWSER_MODS, 3, {
+      cycle = true,
+      match_search = function(s, mod)
+        local tags = {}
+        s = s:gsub("#(%w+)%s*", function(tag)
+          tags[#tags + 1] = tag
+          return ""
+        end):gsub("%s+", " ")
+
+        for _, tag in pairs(tags) do
+          local exists = false
+          for _, mod_tag in ipairs(mod.tags) do
+            if mod_tag == tag then
+              exists = true
+            end
+          end
+          if not exists then
+            return false
+          end
+        end
+
+        local desc = Ezmod.util.read_fmtext(mod.desc, {
+          t = { colour = G.C.GREY, scale = 0.3 },
+          c = { align = "cl", line_space = 0.05 },
+          v = { self = mod },
+        })
+        return next(Ezmod.util.fuzzy_search(mod.name:lower(), s:lower()))
+          or next(Ezmod.util.fuzzy_search(desc:lower(), s:lower()))
+      end,
+      unique_id = function(mod)
+        return mod.id
+      end,
+      on_duplicate = function(mod1, mod2)
+        local mod = mod1
+        if Ezmod.util.version_greater_than(mod2.version, mod1.version) then
+          mod = mod2
+        end
+        return mod
+      end,
+    })
+
   return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
@@ -384,20 +426,7 @@ function UIDef.mod_menu_browser()
           Ezmod.ui.Col({
             c = { align = "cm", minw = 17, id = "ez_mod_menu_browser_bar" },
             n = {
-              Ezmod.ui.Button("<", 0.5, G.C.RED, "ez_mod_menu_browser_back"),
-              Ezmod.ui.Space(0.1),
-              Ezmod.ui.Button("Refresh", 1.5, G.C.RED, "ez_mod_menu_browser_refresh"),
-              Ezmod.ui.Space(0.1),
-              Ezmod.ui.TextInput({
-                id = "ez_mod_menu_browser_search_bar",
-                prompt_text = "Search...",
-                text_scale = 0.4,
-                max_length = 50,
-                ref_table = G.EZ_MOD_MENU,
-                ref_value = "search",
-                w = 10,
-                accept_all = true,
-              }),
+              G.EZ_MOD_MENU.browser_pager:ui(17, 9.3, UIDef.mod_box),
             },
           }),
         },
@@ -414,7 +443,7 @@ function UIDef.mod_menu_mods()
       match_search = function(s, mod)
         local tags = {}
         s = s:gsub("#(%w+)%s*", function(tag)
-          tags[#tags+1] = tag
+          tags[#tags + 1] = tag
           return ""
         end):gsub("%s+", " ")
 

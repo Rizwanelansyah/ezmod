@@ -5,6 +5,7 @@ MODS_PATH = lovely.mod_dir:gsub("/$", "")
 MODS = {}
 ALL_MODS = {}
 ERROR_MODS = {}
+BROWSER_MODS = {}
 Ezmod = {}
 Ezmod.VERSION = "0.0.1"
 Ezmod.path = MODS_PATH .. "/ezmod"
@@ -14,11 +15,12 @@ Ezmod.modlist = { ezmod = true }
 
 package.path = package.path .. (Ezmod.path .. "/?.lua;") .. (Ezmod.path .. "/?/init.lua;")
 
-Ezmod.http = require("ezm.http")
+Ezmod.curl = require("ezm.curl")
 Ezmod.util = require("ezm.util")
 Ezmod.Mod = require("ezm.mod")
 Ezmod.git = require("ezm.git")
 Ezmod.ui = require("ezm.ui")
+Ezmod.sources = {}
 
 local local_mods_listed = false
 function Ezmod.list_downloaded_mods()
@@ -33,6 +35,44 @@ function Ezmod.list_downloaded_mods()
   return ALL_MODS
 end
 
+function Ezmod.format_mod_spec(spec)
+  local name = spec.name
+  local id = spec.id or string.lower(s):gsub("[^%w]+", "_")
+  local prefix = spec.prefix or id
+  local version = Ezmod.util.parse_version(spec.version or { 0, 0, 1 })
+  local spec = {
+    name = name,
+    id = id,
+    prefix = prefix,
+    version = version,
+    deps = spec.deps or {},
+    desc = spec.desc,
+    tags = type(spec.tags) == "string" and { spec.tags } or (spec.tags or {}),
+    icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
+    files = spec.files or {},
+    author = type(spec.author) == "string" and { spec.author } or (spec.author or {}),
+    git_ref = spec.git_ref and (type(spec.git_ref) == "string" and function()
+      return spec.git_ref
+    end or spec.git_ref) or nil,
+    need_relog = spec.need_relog,
+  }
+  return spec
+end
+
+function Ezmod.parse_mod_spec(code)
+  local spec = {
+    VFMT = function(fmt)
+      return function(self)
+        return string.format(fmt, table.concat(self.version, "."))
+      end
+    end,
+  }
+  setmetatable(spec, { __index = _G })
+  load(code, "mod spec", "bt", spec)()
+  getmetatable(spec).__index = nil
+  return Ezmod.format_mod_spec(spec)
+end
+
 function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
   local mods = NFS.getDirectoryItems(mods_path)
   local from, to, inc = 1, #mods, 1
@@ -44,37 +84,9 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
     local path = mods_path .. "/" .. mod_name
     local ezm_spec_code = NFS.read(path .. "/ezmod.lua")
     if ezm_spec_code then
-      local spec = {
-        VFMT = function(fmt)
-          return function(self)
-            return string.format(fmt, table.concat(self.version, "."))
-          end
-        end,
-      }
-      setmetatable(spec, { __index = _G })
-      load(ezm_spec_code, string.format("%s Spec", mod_name), "bt", spec)()
-      local name = spec.name or mod_name
-      local id = spec.id or string.lower(s):gsub("[^%w]+", "_")
-      local prefix = spec.prefix or id
-      local version = Ezmod.util.parse_version(spec.version or { 0, 0, 1 })
-      local spec = {
-        name = name,
-        id = id,
-        prefix = prefix,
-        version = version,
-        deps = spec.deps or {},
-        desc = spec.desc,
-        tags = type(spec.tags) == "string" and { spec.tags } or (spec.tags or {}),
-        icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
-        path = path,
-        author = type(spec.author) == "string" and { spec.author } or (spec.author or {}),
-        git_ref = spec.git_ref and (type(spec.git_ref) == "string" and function()
-          return spec.git_ref
-        end or spec.git_ref) or nil,
-        need_relog = spec.need_relog,
-        downloaded = true,
-      }
-
+      local spec = Ezmod.parse_mod_spec(ezm_spec_code)
+      spec.downloaded = true
+      spec.path = path
       local mod = Ezmod.Mod(spec)
       ALL_MODS[#ALL_MODS + 1] = mod
       if fn then

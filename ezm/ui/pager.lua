@@ -49,6 +49,7 @@ function Pager:update_ui()
   if preview then
     preview.config.object:remove()
     preview.config.object = self:data_preview()
+    preview.UIBox:recalculate()
   end
   return self
 end
@@ -67,6 +68,8 @@ end
 
 function Pager:ui(width, height, fn)
   self.format_data = fn
+  self.ui_width = width
+  self.ui_height = height
 
   local nodes = {}
 
