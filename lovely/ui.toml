@@ -319,3 +319,15 @@ if hover and self.config.hover_colour then
   love.graphics.setColor(self.config.hover_colour)
 elseif not button_active then
 """
+
+[[patches]]
+[patches.pattern]
+target = "functions/button_callbacks.lua"
+pattern = "ease_colour(hook_config.colour, temp_colour)"
+position = "after"
+match_indent = true
+payload = """
+if type(hook_config.on_esc) == 'function' then
+  hook_config.on_esc()
+end
+"""

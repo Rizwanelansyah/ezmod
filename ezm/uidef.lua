@@ -411,7 +411,33 @@ function UIDef.mod_menu_mods()
   local pager = G.EZ_MOD_MENU.mod_pager
     or Ezmod.ui.Pager(ALL_MODS, 3, {
       cycle = true,
-      search = true,
+      match_search = function(s, mod)
+        local tags = {}
+        s = s:gsub("#(%w+)%s*", function(tag)
+          tags[#tags+1] = tag
+          return ""
+        end):gsub("%s+", " ")
+
+        for _, tag in pairs(tags) do
+          local exists = false
+          for _, mod_tag in ipairs(mod.tags) do
+            if mod_tag == tag then
+              exists = true
+            end
+          end
+          if not exists then
+            return false
+          end
+        end
+
+        local desc = Ezmod.util.read_fmtext(mod.desc, {
+          t = { colour = G.C.GREY, scale = 0.3 },
+          c = { align = "cl", line_space = 0.05 },
+          v = { self = mod },
+        })
+        return next(Ezmod.util.fuzzy_search(mod.name:lower(), s:lower()))
+          or next(Ezmod.util.fuzzy_search(desc:lower(), s:lower()))
+      end,
       filters = {
         Loaded = function(mod)
           return mod.loaded
@@ -424,13 +450,13 @@ function UIDef.mod_menu_mods()
       unique_id = function(mod)
         return mod.id
       end,
-      on_duplicate = function (mod1, mod2)
+      on_duplicate = function(mod1, mod2)
         local mod = mod1
         if mod2.loaded then
           mod = mod2
         end
         return mod
-      end
+      end,
     })
   G.EZ_MOD_MENU.mod_pager = pager
 

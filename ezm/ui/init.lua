@@ -1,19 +1,5 @@
 local UI = {}
 
-local function strat(s, i)
-  return string.sub(s, i, i)
-end
-
-local function eval(code, var)
-  local env = setmetatable({}, {
-    __index = function(t, k)
-      return rawget(t, k) or var[k] or _G[k]
-    end,
-  })
-  local f = load("return " .. (code or "nil"), "eval", "bt", env)
-  return f and f()
-end
-
 function UI.Root(opt)
   return { n = G.UIT.ROOT, config = opt.c, nodes = opt.n }
 end
@@ -62,192 +48,38 @@ function UI.DynText(opt)
   return { n = G.UIT.O, config = { object = DynaText(opt) } }
 end
 
-function parse_text(text, conf, var)
+local function create_fmtext(text, conf, var)
   local result = {}
-  local i = 1
-  local len = #text
-  local cur
-  local has_bg = false
   conf = conf or {}
   conf.colour = conf.colour or G.C.GREY
   conf.scale = conf.scale or 0.5
 
-  while i <= len do
-    local char = strat(text, i)
-    if char == "[" then
-      if cur then
-        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
-      end
-      cur = char
-      i = i + 1
-      local fg, bg, text_scale, val
-      local fail = false
-
-      if i <= len and strat(text, i) ~= ":" and strat(text, i) ~= "]" then
-        fg = ""
-        while i <= len and strat(text, i) ~= ":" and strat(text, i) ~= "]" do
-          if strat(text, i) == "%" then
-            i = i + 1
-          end
-          fg = fg .. strat(text, i)
-          i = i + 1
-        end
-        cur = cur .. fg
-      end
-
-      if i <= len and strat(text, i) == ":" then
-        i = i + 1
-        cur = cur .. ":"
-        bg = ""
-        while i <= len and strat(text, i) ~= "]" and strat(text, i) ~= ":" do
-          if strat(text, i) == "%" then
-            i = i + 1
-          end
-          bg = bg .. strat(text, i)
-          i = i + 1
-        end
-        cur = cur .. bg
-      end
-
-      if i <= len and strat(text, i) == ":" then
-        i = i + 1
-        cur = cur .. ":"
-        text_scale = ""
-        while i <= len and strat(text, i) ~= "]" do
-          if strat(text, i) == "%" then
-            i = i + 1
-          end
-          text_scale = text_scale .. strat(text, i)
-          i = i + 1
-        end
-        cur = cur .. bg
-      end
-
-      if i <= len and strat(text, i) == "]" then
-        cur = cur .. strat(text, i)
-        i = i + 1
-      else
-        fail = true
-      end
-
-      if not fail and i <= len and strat(text, i) == "{" then
-        cur = cur .. strat(text, i)
-        i = i + 1
-        val = ""
-        while i <= len and strat(text, i) ~= "}" do
-          if strat(text, i) == "%" then
-            i = i + 1
-          end
-          val = val .. strat(text, i)
-          i = i + 1
-        end
-      else
-        fail = true
-      end
-
-      if not fail and i <= len and strat(text, i) == "}" then
-        cur = cur .. strat(text, i)
-        i = i + 1
-      else
-        fail = true
-      end
-
-      if not fail then
-        cur = nil
-        local bgcolor = eval(bg, var)
-        local scale = 1
-        if text_scale then
-          scale = eval(text_scale, var) or scale
-        end
-        if bgcolor then
-          if not has_bg then
-            has_bg = true
-          end
-          result[#result + 1] = UI.Col({
-            c = { colour = bgcolor or conf.colour, padding = 0.05 * conf.scale * scale, align = "cm" },
-            n = {
-              UI.Space(0.3 * conf.scale * scale),
-              UI.Text({
-                text = eval(val, var),
-                colour = fg and eval(fg, var) or conf.colour,
-                scale = conf.scale * scale,
-              }),
-              UI.Space(0.3 * conf.scale * scale),
-            },
-          })
-        else
-          result[#result + 1] = UI.Text({
-            text = eval(val, var),
-            colour = fg and eval(fg, var) or conf.colour,
-            scale = conf.scale * scale,
-          })
-        end
-      end
-    elseif char == "#" then
-      if cur then
-        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
-      end
-      cur = nil
-      i = i + 1
-      local val = ""
-      while i <= len and strat(text, i) ~= "#" do
-        if strat(text, i) == "%" then
-          i = i + 1
-        end
-        val = val .. strat(text, i)
-        i = i + 1
-      end
-      if i <= len then
-        i = i + 1
-      end
-      result[#result + 1] = UI.Text({ text = eval(val, var), colour = conf.colour, scale = conf.scale })
-    elseif char == "@" then
-      if cur then
-        result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
-      end
-      cur = char
-      i = i + 1
-      local object
-      local fail = false
-      if i <= len and strat(text, i) == "(" then
-        cur = cur .. "("
-        i = i + 1
-      end
-
-      if i <= len and strat(text, i) ~= ")" then
-        object = ""
-        while i <= len and strat(text, i) ~= ")" do
-          if strat(text, i) == "%" then
-            i = i + 1
-          end
-          object = object .. strat(text, i)
-          i = i + 1
-        end
-        cur = cur .. object
-      end
-
-      if i <= len and strat(text, i) == ")" then
-        cur = cur .. strat(text, i)
-        i = i + 1
-      else
-        fail = true
-      end
-
-      if not fail then
-        cur = nil
-        local o = eval(object, var)
-        result[#result + 1] = { n = G.UIT.O, config = { object = o or Moveable() } }
-      end
-    elseif char == "%" then
-      cur = (cur or "") .. strat(text, i + 1)
-      i = i + 2
-    else
-      cur = (cur or "") .. char
-      i = i + 1
+  for i, node in ipairs(Ezmod.util.parse_fmtext(text, conf, var)) do
+    if node.type == "text" then
+      result[i] = UI.Text({ text = node.text, colour = conf.colour, scale = conf.scale })
+    elseif node.type == "textbox" then
+      local scale = node.scale
+      result[i] = UI.Col({
+        c = { colour = node.bg or conf.colour, padding = 0.05 * scale, align = "cm", r = 0.03 },
+        n = {
+          UI.Space(0.3 * scale),
+          UI.Text({
+            text = node.text,
+            colour = node.fg,
+            scale = scale,
+          }),
+          UI.Space(0.3 * scale),
+        },
+      })
+    elseif node.type == "colored" then
+      result[i] = UI.Text({
+        text = node.text,
+        colour = node.colour,
+        scale = node.scale,
+      })
+    elseif node.type == "object" then
+      result[i] = { n = G.UIT.O, config = { object = node.object } }
     end
-  end
-  if cur then
-    result[#result + 1] = UI.Text({ text = cur, colour = conf.colour, scale = conf.scale })
   end
   return result
 end
@@ -271,7 +103,7 @@ function UI.FmText(lines, opt)
     end
     parsed_lines[#parsed_lines + 1] = UI.Row({
       n = {
-        UI.Col({ c = { align = "cm" }, n = parse_text(line, opt.t, var) }),
+        UI.Col({ c = { align = "cm" }, n = create_fmtext(line, opt.t, var) }),
       },
       c = opt.c,
     })

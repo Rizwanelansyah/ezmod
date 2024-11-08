@@ -8,8 +8,10 @@ function Pager:init(data, max, opt)
 
   opt = opt or {}
 
-  if opt.search then
+  if opt.search_str or opt.match_search then
     self.search = ""
+    self.search_str = opt.search_str
+    self.match_search = opt.match_search
   end
 
   if opt.filters and next(opt.filters) then
@@ -81,6 +83,9 @@ function Pager:ui(width, height, fn)
           ref_value = "search",
           w = width - 2,
           accept_all = true,
+          on_esc = function()
+            self:update()
+          end,
         }),
       },
     })
@@ -214,6 +219,21 @@ function Pager:filter_data()
 
     if self.filter and not self.filter(d) then
       add = false
+    end
+
+    if add and self.search and self.search ~= "" then
+      add = false
+      if self.match_search then
+        add = self.match_search(self.search, d)
+      elseif self.search_str then
+        local search_str = self.search_str(d)
+        for _, str in ipairs(search_str) do
+          if next(Ezmod.util.fuzzy_search(str:lower(), self.search:lower())) then
+            add = true
+            break
+          end
+        end
+      end
     end
 
     if self.on_duplicate and not add and unique_datas[id] then
