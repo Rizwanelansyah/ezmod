@@ -126,6 +126,14 @@ function Mod:load()
     end
     MODS[self.id] = self
   end
+
+  if self.id == "ezmod" then
+    local info = NFS.getInfo(Ezmod.data_path .. "/ezmod")
+    if info and info.type == "directory" then
+      Ezmod.util.fs_move(Ezmod.data_path .. "/ezmod", MODS_PATH .. "/ezmod")
+    end
+  end
+
   --TODO: run mod files
 
   if not Ezmod.boot_time and self.need_relog then
@@ -135,14 +143,13 @@ function Mod:load()
     }, {
       config = { fmt_var = { mod = self } },
 
-      { text = "Yes, Relog", colour = G.C.RED, value = true },
-      { text = "No", colour = G.C.BLUE, value = false },
-    }, function(yes)
-      if yes then
+      { text = "Yes, Relog", colour = G.C.RED, value = 'y' },
+      { text = "No", colour = G.C.BLUE, value = 'n' },
+    }, function(answer)
+      if answer == 'y' then
         Ezmod.relog_game()
       end
     end)
-    return
   end
 end
 
@@ -166,14 +173,13 @@ function Mod:unload()
     }, {
       config = { fmt_var = { mod = self } },
 
-      { text = "Yes, Relog", colour = G.C.RED, value = true },
-      { text = "No", colour = G.C.BLUE, value = false },
-    }, function(yes)
-      if yes then
+      { text = "Yes, Relog", colour = G.C.RED, value = 'y' },
+      { text = "No", colour = G.C.BLUE, value = 'n' },
+    }, function(answer)
+      if answer == 'y' then
         Ezmod.relog_game()
       end
     end)
-    return
   end
   self.loaded = false
   --TODO: unload mod (only work for EZ API only)

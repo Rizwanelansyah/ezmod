@@ -354,6 +354,7 @@ function Ezmod.relog_game()
   if love.system.getOS() == "OS X" then
     os.execute('sh "/Users/$USER/Library/Application Support/Steam/steamapps/common/Balatro/run_lovely.sh" &')
   else
+    EZDBG(arg)
     love.thread
       .newThread([[
       os.execute(...)
