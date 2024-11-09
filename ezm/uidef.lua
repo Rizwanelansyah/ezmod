@@ -28,31 +28,31 @@ function UIDef.mod_box(mod)
 
   local _control_buttons = {}
 
-  if mod.loaded then
-    _control_buttons[#_control_buttons + 1] = {
-      "Disable",
-      "disable",
-      darken(G.C.ORANGE, 0.1),
-      function()
-        Ezmod.disable_mod(mod)
-      end,
-      icons,
-      { x = 3, y = 0 },
-    }
-  else
-    _control_buttons[#_control_buttons + 1] = {
-      "Enable",
-      "enable",
-      G.C.GREEN,
-      function()
-        Ezmod.enable_mod(mod)
-      end,
-      icons,
-      { x = 2, y = 0 },
-    }
-  end
-
   if mod.downloaded then
+    if mod.loaded then
+      _control_buttons[#_control_buttons + 1] = {
+        "Disable",
+        "disable",
+        darken(G.C.ORANGE, 0.1),
+        function()
+          Ezmod.disable_mod(mod)
+        end,
+        icons,
+        { x = 3, y = 0 },
+      }
+    else
+      _control_buttons[#_control_buttons + 1] = {
+        "Enable",
+        "enable",
+        G.C.GREEN,
+        function()
+          Ezmod.enable_mod(mod)
+        end,
+        icons,
+        { x = 2, y = 0 },
+      }
+    end
+
     _control_buttons[#_control_buttons + 1] = {
       "Delete",
       "delete",
@@ -417,6 +417,26 @@ function UIDef.mod_menu_browser()
       end,
     })
 
+  for _, src in ipairs(Ezmod.sources) do
+    src:setup(function(mods)
+      for _, mod in ipairs(mods) do
+        local add = true
+        for _, exists_mod in ipairs(BROWSER_MODS) do
+          if mod.id == exists_mod.id then
+            add = false
+            break
+          end
+        end
+
+        if add then
+          mod.source = src
+          BROWSER_MODS[#BROWSER_MODS + 1] = mod
+        end
+      end
+      G.EZ_MOD_MENU.browser_pager:update()
+    end)
+  end
+
   return Ezmod.ui.Root({
     c = { align = "cm", colour = G.C.CLEAR },
     n = {
@@ -481,6 +501,12 @@ function UIDef.mod_menu_mods()
       end,
       on_duplicate = function(mod1, mod2)
         local mod = mod1
+        if Ezmod.util.version_greater_than(mod2.version, mod1.version) then
+          mod = mod2
+        end
+        if mod1.loaded then
+          mod = mod1
+        end
         if mod2.loaded then
           mod = mod2
         end

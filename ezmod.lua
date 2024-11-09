@@ -4,10 +4,11 @@ icon = "icon.jpg"
 version = "0.0.1"
 author = "Rizwanelansyah"
 need_relog = true
+files = {}
 tags = {
-  'modloader',
-  'ui',
-  'api',
+  "modloader",
+  "ui",
+  "api",
 }
 
 desc = [=====[
@@ -19,3 +20,7 @@ reloading the [G.C.RED::1.4]{'Game'} [G.C.UI.TEXT_INACTIVE]{'(Mod must use EZ Mo
 [G.C.UI.TEXT_INACTIVE]{'without reloading)'}.
 
 ]=====]
+
+versions = {
+  '0.0.1',
+}

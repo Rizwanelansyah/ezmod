@@ -24,6 +24,10 @@ function Pager:init(data, max, opt)
     self.unique_id = opt.unique_id
   end
 
+  if opt.update then
+    self.on_update = opt.update
+  end
+
   self.cycle = opt.cycle
   self.on_duplicate = opt.on_duplicate
 
@@ -31,6 +35,10 @@ function Pager:init(data, max, opt)
 end
 
 function Pager:update()
+  if self.on_update then
+    self:on_update()
+  end
+  self.data = self._data
   self:filter_data()
   self.max_page = 1
   local len, field = 0, next(self.data)

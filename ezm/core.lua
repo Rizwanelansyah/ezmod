@@ -1,6 +1,7 @@
 local lovely = require("lovely")
 unpack = unpack or table.unpack
 NFS = require("nativefs")
+JSON = require("json")
 MODS_PATH = lovely.mod_dir:gsub("/$", "")
 MODS = {}
 ALL_MODS = {}
@@ -20,7 +21,9 @@ Ezmod.util = require("ezm.util")
 Ezmod.Mod = require("ezm.mod")
 Ezmod.git = require("ezm.git")
 Ezmod.ui = require("ezm.ui")
-Ezmod.sources = {}
+Ezmod.sources = {
+  require("ezm.sources.ezmod")
+}
 
 local local_mods_listed = false
 function Ezmod.list_downloaded_mods()
@@ -39,7 +42,7 @@ function Ezmod.format_mod_spec(spec)
   local name = spec.name
   local id = spec.id or string.lower(s):gsub("[^%w]+", "_")
   local prefix = spec.prefix or id
-  local version = Ezmod.util.parse_version(spec.version or { 0, 0, 1 })
+  local version = spec.version or { 0, 0, 1 }
   local spec = {
     name = name,
     id = id,
@@ -49,7 +52,7 @@ function Ezmod.format_mod_spec(spec)
     desc = spec.desc,
     tags = type(spec.tags) == "string" and { spec.tags } or (spec.tags or {}),
     icon = type(spec.icon) == "string" and { "image", spec.icon } or spec.icon,
-    files = spec.files or {},
+    files = spec.files or { "init.lua" },
     author = type(spec.author) == "string" and { spec.author } or (spec.author or {}),
     git_ref = spec.git_ref and (type(spec.git_ref) == "string" and function()
       return spec.git_ref

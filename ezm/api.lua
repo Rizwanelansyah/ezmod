@@ -1,5 +1,3 @@
-local API = {
-  Joker = require("ezm.joker")
-}
+local API = {}
 
 return API

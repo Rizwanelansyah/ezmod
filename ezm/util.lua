@@ -428,19 +428,6 @@ function util.read_fmtext(lines, opt)
   return text
 end
 
-function util.has_connection()
-  local socket = require("socket")
-  local test_conn = socket.tcp()
-  test_conn:settimeout(1000)
-  local result = test_conn:connect("www.google.com", 80)
-  test_conn:close()
-  if result == nil then
-    return false
-  else
-    return true
-  end
-end
-
 function EZDBG(...)
   local result = {}
   for i, v in ipairs({ ... }) do

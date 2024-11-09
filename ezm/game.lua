@@ -3,9 +3,6 @@ function Game:update(...)
   game_update(self, ...)
 
   local has_response, res = Ezmod.curl.poll_response()
-  if has_response and res and res.dbg then
-    EZDBG(res.v)
-  end
   if has_response and res and res.handle_id and G.EZM_CURL_HANDLERS[res.handle_id] then
     local handle = G.EZM_CURL_HANDLERS[res.handle_id]
     handle(res)

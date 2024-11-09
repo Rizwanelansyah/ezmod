@@ -9,7 +9,7 @@ function Mod:init(opt)
   self.icon = opt.icon
   self.downloaded = opt.downloaded
   self.loaded = false
-  self.version = opt.version
+  self.version = Ezmod.util.parse_version(opt.version)
   self.files = opt.files
   self.git_ref = opt.git_ref or function()
     return "v" .. table.concat(self.version, ".")
@@ -188,18 +188,22 @@ function Mod:unload()
 end
 
 function Mod:icon_ui(w, h)
+  local tmp = self:tmp_path()
   if self.icon then
-    if self.icon[1] == "animated" and self.downloaded then
+    if self.icon[1] == "animated" and (self.downloaded or NFS.getInfo(tmp .. "/" .. self.icon[2])) then
       local path = self.icon[2]
       local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
       local frames = self.icon[4] or 1
-      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_animated_icon:" .. path
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, "_") .. "_animated_icon:" .. path
       local s = G.ANIMATION_ATLAS[key]
       if not s then
-        local img = love.graphics.newImage(
-          Ezmod.util.new_file_data(self.path .. "/assets/" .. path),
-          { mipmaps = true, dpiscale = 1 }
-        )
+        local image_path
+        if self.downloaded then
+          image_path =  self.path .. "/assets/" .. path
+        else
+          image_path = tmp .. "/" .. self.icon[2]
+        end
+        local img = love.graphics.newImage(Ezmod.util.new_file_data(image_path), { mipmaps = true, dpiscale = 1 })
         local data = {
           name = path,
           image = img,
@@ -212,13 +216,20 @@ function Mod:icon_ui(w, h)
       end
 
       return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s) } }
-    elseif self.icon[1] == "image" and self.downloaded then
+    elseif self.icon[1] == "image" and (self.downloaded or NFS.getInfo(tmp .. "/" .. self.icon[2])) then
       local path = self.icon[2]
-      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_icon:" .. path
+      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, "_") .. "_icon:" .. path
       local s = G.ASSET_ATLAS[key]
       if not s then
+        local image_path
+        if self.downloaded then
+          image_path =  self.path .. "/assets/" .. path
+        else
+          image_path = tmp .. "/" .. path
+        end
+        EZDBG(self.id, image_path)
         local img = love.graphics.newImage(
-          Ezmod.util.new_file_data(self.path .. "/assets/" .. path),
+          Ezmod.util.new_file_data(image_path),
           { mipmaps = true, dpiscale = 1 }
         )
         local data = {
@@ -243,51 +254,18 @@ function Mod:icon_ui(w, h)
         n = G.UIT.O,
         config = { object = AnimatedSprite(0, 0, w or 1, h or 1, G.ANIMATION_ATLAS[self.icon[2]], offset) },
       }
-    elseif self.icon[1] == "file_data:image" then
-      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_icon"
-      local s = G.ASSET_ATLAS[key]
-      if not s then
-        local img = love.graphics.newImage(
-          love.graphics.newFileData(self.icon[2], ""),
-          { mipmaps = true, dpiscale = 1 }
-        )
-        local data = {
-          name = key,
-          image = img,
-          px = img:getWidth(),
-          py = img:getHeight(),
-        }
-        G.ASSET_ATLAS[key] = data
-        s = data
-      end
-      return { n = G.UIT.O, config = { object = Sprite(0, 0, w or 1, h or 1, s) } }
-    elseif self.icon[1] == "file_data:animated" then
-      local path = self.icon[2]
-      local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
-      local frames = self.icon[4] or 1
-      local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, '_') .. "_animated_icon"
-      local s = G.ANIMATION_ATLAS[key]
-      if not s then
-        local img = love.graphics.newImage(
-          Ezmod.util.new_file_data(love.graphics.newFileData(self.icon[2], "")),
-          { mipmaps = true, dpiscale = 1 }
-        )
-        local data = {
-          name = path,
-          image = img,
-          px = size[1],
-          py = size[2],
-          frames = frames,
-        }
-        G.ANIMATION_ATLAS[key] = data
-        s = data
-      end
-
-      return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s) } }
     end
   end
   -- Use rare joker tag sprite if didn't have an icon
   return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
+end
+
+function Mod:tmp_path(create)
+  local tmp = Ezmod.data_path .. "/tmp/assets/" .. self.id .. "/" .. table.concat(self.version, ".")
+  if create and not NFS.getInfo(tmp) then
+    NFS.createDirectory(tmp)
+  end
+  return tmp
 end
 
 return Mod
