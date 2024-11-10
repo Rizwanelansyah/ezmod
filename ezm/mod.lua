@@ -12,7 +12,7 @@ function Mod:init(opt)
   self.version = Ezmod.util.parse_version(opt.version)
   self.files = opt.files
   self.git_ref = opt.git_ref or function()
-    return "v" .. table.concat(self.version, ".")
+    return table.concat(self.version, ".")
   end
   self.author = opt.author
   self.need_relog = opt.need_relog
@@ -187,7 +187,7 @@ function Mod:unload()
   --TODO: unload mod (only work for EZ API only)
 end
 
-function Mod:icon_ui(w, h)
+function Mod:icon_ui(w, h, reset)
   local tmp = self:tmp_path()
   if self.icon then
     if self.icon[1] == "animated" and (self.downloaded or NFS.getInfo(tmp .. "/" .. self.icon[2])) then
@@ -195,6 +195,9 @@ function Mod:icon_ui(w, h)
       local size = type(self.icon[3]) == "number" and { self.icon[3], self.icon[3] } or self.icon[3]
       local frames = self.icon[4] or 1
       local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, "_") .. "_animated_icon:" .. path
+      if reset then
+        G.ANIMATION_ATLAS[key] = nil
+      end
       local s = G.ANIMATION_ATLAS[key]
       if not s then
         local image_path
@@ -205,7 +208,7 @@ function Mod:icon_ui(w, h)
         end
         local img = love.graphics.newImage(Ezmod.util.new_file_data(image_path), { mipmaps = true, dpiscale = 1 })
         local data = {
-          name = path,
+          name = key,
           image = img,
           px = size[1],
           py = size[2],
@@ -215,10 +218,13 @@ function Mod:icon_ui(w, h)
         s = data
       end
 
-      return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s) } }
+      return { n = G.UIT.O, config = { object = AnimatedSprite(0, 0, w or 1, h or 1, s), id = "ezm_mod_icon_ui_" .. self.id .. "_v" .. table.concat(self.version, "_") } }
     elseif self.icon[1] == "image" and (self.downloaded or NFS.getInfo(tmp .. "/" .. self.icon[2])) then
       local path = self.icon[2]
       local key = "ezmod_" .. self.id .. "_v" .. table.concat(self.version, "_") .. "_icon:" .. path
+      if reset then
+        G.ANIMATION_ATLAS[key] = nil
+      end
       local s = G.ASSET_ATLAS[key]
       if not s then
         local image_path
@@ -227,13 +233,12 @@ function Mod:icon_ui(w, h)
         else
           image_path = tmp .. "/" .. path
         end
-        EZDBG(self.id, image_path)
         local img = love.graphics.newImage(
           Ezmod.util.new_file_data(image_path),
           { mipmaps = true, dpiscale = 1 }
         )
         local data = {
-          name = path,
+          name = key,
           image = img,
           px = img:getWidth(),
           py = img:getHeight(),
@@ -241,23 +246,25 @@ function Mod:icon_ui(w, h)
         G.ASSET_ATLAS[key] = data
         s = data
       end
-      return { n = G.UIT.O, config = { object = Sprite(0, 0, w or 1, h or 1, s) } }
+      return { n = G.UIT.O, config = { object = Sprite(0, 0, w or 1, h or 1, s), id = "ezm_mod_icon_ui_" .. self.id .. "_v" .. table.concat(self.version, "_") } }
     elseif self.icon[1] == "balatro:sprite" then
       local offset = self.icon[3] and { x = self.icon[3][1], y = self.icon[3][2] }
       return {
         n = G.UIT.O,
-        config = { object = Sprite(0, 0, w or 1, h or 1, G.ASSET_ATLAS[self.icon[2]], offset) },
+        config = { object = Sprite(0, 0, w or 1, h or 1, G.ASSET_ATLAS[self.icon[2]], offset), id = "ezm_mod_icon_ui_" .. self.id .. "_v" .. table.concat(self.version, "_") },
       }
     elseif self.icon[1] == "balatro:animation" then
       local offset = self.icon[3] and { x = self.icon[3][1], y = self.icon[3][2] }
       return {
         n = G.UIT.O,
-        config = { object = AnimatedSprite(0, 0, w or 1, h or 1, G.ANIMATION_ATLAS[self.icon[2]], offset) },
+        config = { object = AnimatedSprite(0, 0, w or 1, h or 1, G.ANIMATION_ATLAS[self.icon[2]], offset), id = "ezm_mod_icon_ui_" .. self.id .. "_v" .. table.concat(self.version, "_") },
       }
     end
   end
   -- Use rare joker tag sprite if didn't have an icon
-  return Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
+  local sprite = Ezmod.ui.Sprite("tags", w or 1, h or 1, { x = 1, y = 0 })
+  sprite.config.id = "ezm_mod_icon_ui_" .. self.id .. "_v" .. table.concat(self.version, "_")
+  return sprite
 end
 
 function Mod:tmp_path(create)

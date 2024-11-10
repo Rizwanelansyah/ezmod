@@ -122,8 +122,13 @@ local function iter_files(path, fn)
 end
 
 function util.iter_archive(archive_content, base_path, fn)
+  base_path = base_path and ("/" .. base_path) or ""
   util.mount(archive_content, function(mp)
-    local path = mp .. "/" .. base_path
+    if base_path == "/*" then
+      local p = love.filesystem.getDirectoryItems(mp)[1]
+      base_path = p and ("/" .. p) or base_path
+    end
+    local path = mp .. base_path
     iter_files(path, function(p)
       local content = love.filesystem.read(p)
       p = string.sub(p, #path + 2, -1)

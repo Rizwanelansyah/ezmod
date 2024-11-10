@@ -22,7 +22,7 @@ Ezmod.Mod = require("ezm.mod")
 Ezmod.git = require("ezm.git")
 Ezmod.ui = require("ezm.ui")
 Ezmod.sources = {
-  require("ezm.sources.ezmod")
+  require("ezm.sources.ezmod"),
 }
 
 local local_mods_listed = false
@@ -101,18 +101,27 @@ function Ezmod.list_mods(mods_path, fn, deep_load, reverse)
   end
 end
 
-function Ezmod.boot()
-  Ezmod.boot_time = true
-  Ezmod.boot_progress = 0
-  boot_timer(nil, "Init", Ezmod.boot_progress, "EZ Mod Loader")
+function Ezmod.init()
+  if NFS.getInfo(Ezmod.data_path .. "/tmp") then
+    Ezmod.util.fs_remove(Ezmod.data_path .. "/tmp")
+  end
+  NFS.createDirectory(Ezmod.data_path .. "/tmp")
 
   if not NFS.getInfo(Ezmod.download_path, "directory") then
     NFS.createDirectory(Ezmod.download_path)
   end
+
   if not NFS.getInfo(Ezmod.data_path .. "/modlist.lua", "file") then
     NFS.write(Ezmod.data_path .. "/modlist.lua", "return {}")
   end
   Ezmod.modlist = load(Ezmod.util.read_file(Ezmod.data_path .. "/modlist.lua"), "modlist", "bt")() or {}
+end
+
+function Ezmod.boot()
+  Ezmod.boot_time = true
+  Ezmod.boot_progress = 0
+  boot_timer(nil, "Init", Ezmod.boot_progress, "EZ Mod Loader")
+  Ezmod.init()
 
   boot_timer(nil, "Loading Assets", Ezmod.boot_progress)
   Ezmod.load_assets()
@@ -369,7 +378,6 @@ function Ezmod.relog_game()
   if love.system.getOS() == "OS X" then
     os.execute('sh "/Users/$USER/Library/Application Support/Steam/steamapps/common/Balatro/run_lovely.sh" &')
   else
-    EZDBG(arg)
     love.thread
       .newThread([[
       os.execute(...)

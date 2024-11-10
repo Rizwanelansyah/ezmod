@@ -64,15 +64,43 @@ function UIDef.mod_box(mod)
       { x = 1, y = 0 },
     }
   else
-    _control_buttons[#_control_buttons + 1] = {
-      "Download",
-      "download",
-      darken(G.C.GREEN, 0.2),
-      function()
-        --TODO: download the mod
-      end,
-      icons,
-    }
+    if not mod.downloading then
+      _control_buttons[#_control_buttons + 1] = {
+        "Download",
+        "download",
+        darken(G.C.GREEN, 0.2),
+        function()
+          local function after(success)
+            mod.downloading = false
+            if success then
+              mod.downloaded = true
+            end
+            G.EZ_MOD_MENU.browser_pager:update_ui()
+          end
+          local exists = false
+          if mod.source then
+            exists = mod.source:download(mod.id, mod.version, after)
+          end
+
+          if not exists then
+            for _, s in ipairs(Ezmod.sources) do
+              if mod.source ~= s then
+                exists = mod.source:download(mod.id, mod.version, after)
+                if exists then
+                  break
+                end
+              end
+            end
+          end
+
+          if exists then
+            mod.downloading = true
+            G.EZ_MOD_MENU.browser_pager:update_ui()
+          end
+        end,
+        icons,
+      }
+    end
   end
 
   ctx_rows.config = { bg = G.C.GREY, inverse_colour = true }
@@ -85,6 +113,15 @@ function UIDef.mod_box(mod)
     end,
   }
 
+  if mod.downloading then
+    control_buttons[#control_buttons + 1] = Ezmod.ui.Row({
+      n = {
+        Ezmod.ui.Space(0.2),
+        Ezmod.ui.DynText({ string = "Downloading", float = true, colours = { G.C.GREEN }, scale = 0.4 }),
+        Ezmod.ui.Space(0.2),
+      },
+    })
+  end
   for i, btn in ipairs(_control_buttons) do
     local button = Ezmod.ui.Button(
       btn[1],
@@ -95,7 +132,7 @@ function UIDef.mod_box(mod)
       { scale = 0.3, ref_table = mod, icon = btn[5], icon_offset = btn[6] }
     )
     button.nodes[1].config.shadow = false
-    control_buttons[i] = Ezmod.ui.Row({
+    control_buttons[#control_buttons + 1] = Ezmod.ui.Row({
       c = { padding = 0.1 },
       n = {
         Ezmod.ui.Stack({
@@ -128,7 +165,7 @@ function UIDef.mod_box(mod)
                           n = {
                             Ezmod.ui.DynText({
                               string = mod.name,
-                              colour = G.C.GREY,
+                              colours = { G.C.RED },
                               scale = 0.4,
                               float = true,
                               shadow = true,

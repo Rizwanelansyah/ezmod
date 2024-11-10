@@ -24,10 +24,62 @@ payload = ""
 [[patches]]
 [patches.pattern]
 target = "main.lua"
+pattern = "function love.quit()"
+position = "after"
+match_indent = true
+payload = """
+Ezmod.curl.kill_thread()
+if NFS.getInfo(Ezmod.data_path .. "/tmp") then
+  Ezmod.util.fs_remove(Ezmod.data_path .. "/tmp")
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
 pattern = "function love.draw()"
 position = "after"
 match_indent = true
 payload = "love.graphics.clear(0, 0, 0, 1)"
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "if e == \"quit\" then"
+position = "after"
+match_indent = true
+payload = """
+if Ezmod.curl then Ezmod.curl.kill_thread() end
+if NFS.getInfo(Ezmod.data_path .. "/tmp") then
+  Ezmod.util.fs_remove(Ezmod.data_path .. "/tmp")
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "elseif e == \"keypressed\" and a == \"escape\" then"
+position = "after"
+match_indent = true
+payload = """
+if Ezmod.curl then Ezmod.curl.kill_thread() end
+if NFS.getInfo(Ezmod.data_path .. "/tmp") then
+  Ezmod.util.fs_remove(Ezmod.data_path .. "/tmp")
+end
+"""
+
+[[patches]]
+[patches.pattern]
+target = "main.lua"
+pattern = "if pressed == 1 then"
+position = "after"
+match_indent = true
+payload = """
+if Ezmod.curl then Ezmod.curl.kill_thread() end
+if NFS.getInfo(Ezmod.data_path .. "/tmp") then
+  Ezmod.util.fs_remove(Ezmod.data_path .. "/tmp")
+end
+"""
 
 [[patches]]
 [patches.copy]
